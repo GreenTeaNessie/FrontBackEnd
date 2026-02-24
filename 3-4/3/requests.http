@@ -1,0 +1,20 @@
+﻿### Получить список пользователей
+GET http://localhost:3000/users
+
+### Получить пользователя по ID
+GET http://localhost:3000/users/1
+
+### Создать пользователя
+POST http://localhost:3000/users
+
+### Частично обновить пользователя
+PATCH http://localhost:3000/users/1
+
+### Удалить пользователя
+DELETE http://localhost:3000/users/1
+
+### Локальный прокси к ExchangeRate-API (все курсы от USD)
+GET http://localhost:3000/exchange-rate/USD
+
+### Локальный прокси к ExchangeRate-API (USD -> RUB)
+GET http://localhost:3000/exchange-rate/USD?target=RUB

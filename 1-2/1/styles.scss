@@ -1,0 +1,127 @@
+﻿$accent-color: #1f7a5c;
+$surface-color: #ffffff;
+$text-color: #1f2937;
+$radius: 16px;
+$shadow: 0 14px 35px rgba(15, 23, 42, 0.14);
+
+@mixin cta-button($bg-color, $fg-color: #ffffff) {
+  display: inline-block;
+  padding: 12px 18px;
+  border-radius: 10px;
+  background: $bg-color;
+  color: $fg-color;
+  text-decoration: none;
+  font-weight: 600;
+  transition: transform 0.2s ease, filter 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  color: $text-color;
+  background: linear-gradient(160deg, #edf6f2 0%, #f6fbf8 100%);
+}
+
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.property-card {
+  width: min(820px, 100%);
+  background: $surface-color;
+  border-radius: $radius;
+  box-shadow: $shadow;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+
+  &__media {
+    margin: 0;
+  }
+
+  &__image {
+    width: 100%;
+    height: 100%;
+    min-height: 340px;
+    object-fit: cover;
+    display: block;
+  }
+
+  &__content {
+    padding: 24px;
+    display: grid;
+    gap: 12px;
+    align-content: center;
+  }
+
+  &__label {
+    margin: 0;
+    color: $accent-color;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 30px;
+    line-height: 1.2;
+  }
+
+  &__description {
+    margin: 0;
+    color: #4b5563;
+    line-height: 1.5;
+  }
+
+  &__price {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 800;
+    color: #0b3d2f;
+  }
+
+  &__button {
+    @include cta-button($accent-color);
+    justify-self: start;
+  }
+
+  &--featured {
+    border: 2px solid rgba(31, 122, 92, 0.2);
+  }
+}
+
+@media (max-width: 760px) {
+  .property-card {
+    grid-template-columns: 1fr;
+
+    &__image {
+      min-height: 230px;
+    }
+
+    &__content {
+      padding: 20px;
+    }
+
+    &__title {
+      font-size: 24px;
+    }
+
+    &__price {
+      font-size: 26px;
+    }
+  }
+}

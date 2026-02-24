@@ -1,0 +1,14 @@
+﻿### Получить список пользователей
+GET http://localhost:3000/api/users
+
+### Получить пользователя по ID
+GET http://localhost:3000/api/users/ID_ПОЛЬЗОВАТЕЛЯ
+
+### Создать пользователя
+POST http://localhost:3000/api/users
+
+### Частично обновить пользователя
+PATCH http://localhost:3000/api/users/ID_ПОЛЬЗОВАТЕЛЯ
+
+### Удалить пользователя
+DELETE http://localhost:3000/api/users/ID_ПОЛЬЗОВАТЕЛЯ
