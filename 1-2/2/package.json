@@ -82,16 +82,3 @@
   "license": "ISC",
   "type": "commonjs"
 }
-
-{
-  "name": "practice-2-real-estate-api",
-  "version": "1.0.0",
-  "description": "Практическа 2",
-  "main": "app.js",
-  "scripts": {
-    "start": "node app.js"
-  },
-  "dependencies": {
-    "express": "^4.21.2"
-  }
-}
