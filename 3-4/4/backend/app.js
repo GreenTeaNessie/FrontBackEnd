@@ -111,7 +111,7 @@ app.use((req, res, next) => {
 });
 
 function findPropertyOr404(id, res) {
-  const property = properties.find((item) => item.id == id);
+  const property = properties.find((p) => p.id == id);
 
   if (!property) {
     res.status(404).json({ error: "Объект недвижимости не найден" });
@@ -121,72 +121,31 @@ function findPropertyOr404(id, res) {
   return property;
 }
 
-function normalizeText(value) {
-  return String(value || "").trim();
-}
-
-function normalizePropertyPayload(payload, partial = false) {
-  const normalized = {};
-  const allowedFields = ["name", "category", "description", "price", "stock"];
-
-  for (const field of allowedFields) {
-    if (payload[field] === undefined) {
-      continue;
-    }
-
-    if (field === "price" || field === "stock") {
-      normalized[field] = Number(payload[field]);
-    } else {
-      normalized[field] = normalizeText(payload[field]);
-    }
-  }
-
-  if (!partial) {
-    for (const field of allowedFields) {
-      if (normalized[field] === undefined) {
-        return { error: `Поле "${field}" обязательно` };
-      }
-    }
-  } else if (Object.keys(normalized).length === 0) {
-    return { error: "Нет данных для обновления" };
-  }
-
-  if (normalized.name !== undefined && !normalized.name) {
-    return { error: "Название объекта обязательно" };
-  }
-
-  if (normalized.category !== undefined && !normalized.category) {
-    return { error: "Категория обязательна" };
-  }
-
-  if (normalized.description !== undefined && !normalized.description) {
-    return { error: "Описание обязательно" };
-  }
-
-  if (normalized.price !== undefined && (!Number.isFinite(normalized.price) || normalized.price <= 0)) {
-    return { error: "Цена должна быть положительным числом" };
-  }
-
-  if (normalized.stock !== undefined || !partial) {
-    const stockValue = normalized.stock;
-    if (!Number.isInteger(stockValue) || stockValue < 0) {
-      return { error: "Количество на складе должно быть целым числом от 0" };
-    }
-  }
-
-  return { data: normalized };
-}
-
 app.post("/api/properties", (req, res) => {
-  const { data, error } = normalizePropertyPayload(req.body);
+  const { name, category, description, price, stock } = req.body;
 
-  if (error) {
-    return res.status(400).json({ error });
+  if (!name || !category || !description || price === undefined || stock === undefined) {
+    return res.status(400).json({ error: "Все поля обязательны" });
+  }
+
+  const parsedPrice = Number(price);
+  const parsedStock = Number(stock);
+
+  if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+    return res.status(400).json({ error: "Цена должна быть положительным числом" });
+  }
+
+  if (!Number.isInteger(parsedStock) || parsedStock < 0) {
+    return res.status(400).json({ error: "Количество на складе должно быть целым числом от 0" });
   }
 
   const newProperty = {
     id: nanoid(6),
-    ...data
+    name: String(name).trim(),
+    category: String(category).trim(),
+    description: String(description).trim(),
+    price: parsedPrice,
+    stock: parsedStock
   };
 
   properties.push(newProperty);
@@ -214,24 +173,57 @@ app.patch("/api/properties/:id", (req, res) => {
     return;
   }
 
-  const { data, error } = normalizePropertyPayload(req.body, true);
-
-  if (error) {
-    return res.status(400).json({ error });
+  if (
+    req.body?.name === undefined &&
+    req.body?.category === undefined &&
+    req.body?.description === undefined &&
+    req.body?.price === undefined &&
+    req.body?.stock === undefined
+  ) {
+    return res.status(400).json({ error: "Нет данных для обновления" });
   }
 
-  Object.assign(property, data);
+  const { name, category, description, price, stock } = req.body;
+
+  if (name !== undefined) {
+    property.name = String(name).trim();
+  }
+
+  if (category !== undefined) {
+    property.category = String(category).trim();
+  }
+
+  if (description !== undefined) {
+    property.description = String(description).trim();
+  }
+
+  if (price !== undefined) {
+    const parsedPrice = Number(price);
+    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+      return res.status(400).json({ error: "Цена должна быть положительным числом" });
+    }
+    property.price = parsedPrice;
+  }
+
+  if (stock !== undefined) {
+    const parsedStock = Number(stock);
+    if (!Number.isInteger(parsedStock) || parsedStock < 0) {
+      return res.status(400).json({ error: "Количество на складе должно быть целым числом от 0" });
+    }
+    property.stock = parsedStock;
+  }
+
   res.json(property);
 });
 
 app.delete("/api/properties/:id", (req, res) => {
-  const exists = properties.some((item) => item.id === req.params.id);
+  const exists = properties.some((p) => p.id === req.params.id);
 
   if (!exists) {
     return res.status(404).json({ error: "Объект недвижимости не найден" });
   }
 
-  properties = properties.filter((item) => item.id !== req.params.id);
+  properties = properties.filter((p) => p.id !== req.params.id);
   res.status(204).send();
 });
 
