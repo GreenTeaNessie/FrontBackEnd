@@ -1,0 +1,29 @@
+### Get all users
+GET http://localhost:3000/api/users
+
+### Get user by ID
+GET http://localhost:3000/api/users/{{id}}
+
+### Create user
+POST http://localhost:3000/api/users
+Content-Type: application/json
+
+{
+  "name": "Anna",
+  "age": 24
+}
+
+### Update user
+PATCH http://localhost:3000/api/users/{{id}}
+Content-Type: application/json
+
+{
+  "name": "Anna Updated",
+  "age": 25
+}
+
+### Delete user
+DELETE http://localhost:3000/api/users/{{id}}
+
+### Swagger UI
+GET http://localhost:3000/api-docs
