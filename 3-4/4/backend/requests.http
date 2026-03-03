@@ -1,14 +1,29 @@
-﻿### Получить список пользователей
-GET http://localhost:3000/api/users
+﻿### Получить список объектов недвижимости
+GET http://localhost:3000/api/properties
 
-### Получить пользователя по ID
-GET http://localhost:3000/api/users/ID_ПОЛЬЗОВАТЕЛЯ
+### Получить объект по ID
+GET http://localhost:3000/api/properties/ID_ОБЪЕКТА
 
-### Создать пользователя
-POST http://localhost:3000/api/users
+### Создать объект
+POST http://localhost:3000/api/properties
+Content-Type: application/json
 
-### Частично обновить пользователя
-PATCH http://localhost:3000/api/users/ID_ПОЛЬЗОВАТЕЛЯ
+{
+  "name": "Студия 30 м2, Мурино",
+  "category": "Квартира",
+  "description": "Новая студия с отделкой.",
+  "price": 6200000,
+  "stock": 1
+}
 
-### Удалить пользователя
-DELETE http://localhost:3000/api/users/ID_ПОЛЬЗОВАТЕЛЯ
+### Частично обновить объект
+PATCH http://localhost:3000/api/properties/ID_ОБЪЕКТА
+Content-Type: application/json
+
+{
+  "price": 6400000,
+  "stock": 1
+}
+
+### Удалить объект
+DELETE http://localhost:3000/api/properties/ID_ОБЪЕКТА

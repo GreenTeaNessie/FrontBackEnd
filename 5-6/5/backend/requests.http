@@ -1,0 +1,29 @@
+### Получить список пользователей
+GET http://localhost:3000/api/users
+
+### Получить пользователя по ID
+GET http://localhost:3000/api/users/ID_ПОЛЬЗОВАТЕЛЯ
+
+### Создать пользователя
+POST http://localhost:3000/api/users
+Content-Type: application/json
+
+{
+  "name": "Новый пользователь",
+  "age": 21
+}
+
+### Частично обновить пользователя
+PATCH http://localhost:3000/api/users/ID_ПОЛЬЗОВАТЕЛЯ
+Content-Type: application/json
+
+{
+  "name": "Обновленное имя",
+  "age": 22
+}
+
+### Удалить пользователя
+DELETE http://localhost:3000/api/users/ID_ПОЛЬЗОВАТЕЛЯ
+
+### Swagger UI
+GET http://localhost:3000/api-docs

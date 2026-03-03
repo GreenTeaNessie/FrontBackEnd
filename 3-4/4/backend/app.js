@@ -15,10 +15,87 @@ app.use(
 
 app.use(express.json());
 
-let users = [
-  { id: nanoid(6), name: "User 1", age: 16 },
-  { id: nanoid(6), name: "User 2", age: 18 },
-  { id: nanoid(6), name: "User 3", age: 20 }
+let properties = [
+  {
+    id: nanoid(6),
+    name: "Студия 27 м2, Мурино",
+    category: "Квартира",
+    description: "Компактная студия у метро Девяткино, после ремонта.",
+    price: 5100000,
+    stock: 1
+  },
+  {
+    id: nanoid(6),
+    name: "2-комнатная 58 м2, Кудрово",
+    category: "Квартира",
+    description: "Светлая квартира с кухней-гостиной в новом ЖК.",
+    price: 8900000,
+    stock: 1
+  },
+  {
+    id: nanoid(6),
+    name: "Апартаменты 42 м2, Васильевский остров",
+    category: "Апартаменты",
+    description: "Готовые апартаменты под аренду рядом с набережной.",
+    price: 11200000,
+    stock: 1
+  },
+  {
+    id: nanoid(6),
+    name: "3-комнатная 86 м2, Приморский район",
+    category: "Квартира",
+    description: "Семейная квартира с видом на парк и подземным паркингом.",
+    price: 17400000,
+    stock: 1
+  },
+  {
+    id: nanoid(6),
+    name: "Таунхаус 120 м2, Парголово",
+    category: "Таунхаус",
+    description: "Двухэтажный таунхаус с террасой и собственным участком.",
+    price: 19800000,
+    stock: 1
+  },
+  {
+    id: nanoid(6),
+    name: "Дом 165 м2, Всеволожский район",
+    category: "Дом",
+    description: "Дом для постоянного проживания, участок 8 соток.",
+    price: 23500000,
+    stock: 1
+  },
+  {
+    id: nanoid(6),
+    name: "Коммерческое помещение 95 м2, центр",
+    category: "Коммерция",
+    description: "Первый этаж, высокий пешеходный трафик, витринные окна.",
+    price: 27600000,
+    stock: 1
+  },
+  {
+    id: nanoid(6),
+    name: "Пентхаус 140 м2, Петроградская",
+    category: "Пентхаус",
+    description: "Панорамные окна, терраса 35 м2, премиальная отделка.",
+    price: 48900000,
+    stock: 1
+  },
+  {
+    id: nanoid(6),
+    name: "Участок 12 соток, Репино",
+    category: "Земельный участок",
+    description: "Ровный участок под ИЖС, все коммуникации по границе.",
+    price: 9900000,
+    stock: 1
+  },
+  {
+    id: nanoid(6),
+    name: "Склад 600 м2, Шушары",
+    category: "Склад",
+    description: "Отапливаемый склад класса B, удобный подъезд для фур.",
+    price: 35200000,
+    stock: 1
+  }
 ];
 
 app.use((req, res, next) => {
@@ -33,80 +110,128 @@ app.use((req, res, next) => {
   next();
 });
 
-function findUserOr404(id, res) {
-  const user = users.find((u) => u.id == id);
+function findPropertyOr404(id, res) {
+  const property = properties.find((item) => item.id == id);
 
-  if (!user) {
-    res.status(404).json({ error: "Пользователь не найден" });
+  if (!property) {
+    res.status(404).json({ error: "Объект недвижимости не найден" });
     return null;
   }
 
-  return user;
+  return property;
 }
 
-app.post("/api/users", (req, res) => {
-  const { name, age } = req.body;
+function normalizeText(value) {
+  return String(value || "").trim();
+}
 
-  if (!name || age === undefined) {
-    return res.status(400).json({ error: "Имя и возраст обязательны" });
+function normalizePropertyPayload(payload, partial = false) {
+  const normalized = {};
+  const allowedFields = ["name", "category", "description", "price", "stock"];
+
+  for (const field of allowedFields) {
+    if (payload[field] === undefined) {
+      continue;
+    }
+
+    if (field === "price" || field === "stock") {
+      normalized[field] = Number(payload[field]);
+    } else {
+      normalized[field] = normalizeText(payload[field]);
+    }
   }
 
-  const newUser = {
+  if (!partial) {
+    for (const field of allowedFields) {
+      if (normalized[field] === undefined) {
+        return { error: `Поле "${field}" обязательно` };
+      }
+    }
+  } else if (Object.keys(normalized).length === 0) {
+    return { error: "Нет данных для обновления" };
+  }
+
+  if (normalized.name !== undefined && !normalized.name) {
+    return { error: "Название объекта обязательно" };
+  }
+
+  if (normalized.category !== undefined && !normalized.category) {
+    return { error: "Категория обязательна" };
+  }
+
+  if (normalized.description !== undefined && !normalized.description) {
+    return { error: "Описание обязательно" };
+  }
+
+  if (normalized.price !== undefined && (!Number.isFinite(normalized.price) || normalized.price <= 0)) {
+    return { error: "Цена должна быть положительным числом" };
+  }
+
+  if (normalized.stock !== undefined || !partial) {
+    const stockValue = normalized.stock;
+    if (!Number.isInteger(stockValue) || stockValue < 0) {
+      return { error: "Количество на складе должно быть целым числом от 0" };
+    }
+  }
+
+  return { data: normalized };
+}
+
+app.post("/api/properties", (req, res) => {
+  const { data, error } = normalizePropertyPayload(req.body);
+
+  if (error) {
+    return res.status(400).json({ error });
+  }
+
+  const newProperty = {
     id: nanoid(6),
-    name: String(name).trim(),
-    age: Number(age)
+    ...data
   };
 
-  users.push(newUser);
-  res.status(201).json(newUser);
+  properties.push(newProperty);
+  res.status(201).json(newProperty);
 });
 
-app.get("/api/users", (req, res) => {
-  res.json(users);
+app.get("/api/properties", (req, res) => {
+  res.json(properties);
 });
 
-app.get("/api/users/:id", (req, res) => {
-  const user = findUserOr404(req.params.id, res);
+app.get("/api/properties/:id", (req, res) => {
+  const property = findPropertyOr404(req.params.id, res);
 
-  if (!user) {
+  if (!property) {
     return;
   }
 
-  res.json(user);
+  res.json(property);
 });
 
-app.patch("/api/users/:id", (req, res) => {
-  const user = findUserOr404(req.params.id, res);
+app.patch("/api/properties/:id", (req, res) => {
+  const property = findPropertyOr404(req.params.id, res);
 
-  if (!user) {
+  if (!property) {
     return;
   }
 
-  if (req.body?.name === undefined && req.body?.age === undefined) {
-    return res.status(400).json({ error: "Нет данных для обновления" });
+  const { data, error } = normalizePropertyPayload(req.body, true);
+
+  if (error) {
+    return res.status(400).json({ error });
   }
 
-  const { name, age } = req.body;
-
-  if (name !== undefined) {
-    user.name = String(name).trim();
-  }
-
-  if (age !== undefined) {
-    user.age = Number(age);
-  }
-
-  res.json(user);
+  Object.assign(property, data);
+  res.json(property);
 });
 
-app.delete("/api/users/:id", (req, res) => {
-  const exists = users.some((u) => u.id === req.params.id);
+app.delete("/api/properties/:id", (req, res) => {
+  const exists = properties.some((item) => item.id === req.params.id);
 
   if (!exists) {
-    return res.status(404).json({ error: "Пользователь не найден" });
+    return res.status(404).json({ error: "Объект недвижимости не найден" });
   }
 
-  users = users.filter((u) => u.id !== req.params.id);
+  properties = properties.filter((item) => item.id !== req.params.id);
   res.status(204).send();
 });
 
