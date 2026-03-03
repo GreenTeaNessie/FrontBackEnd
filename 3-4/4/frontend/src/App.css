@@ -1,0 +1,167 @@
+﻿* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  color: #132a22;
+  background: linear-gradient(160deg, #eff8f3 0%, #f7fbf9 100%);
+}
+
+.page {
+  width: min(1100px, 100%);
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+}
+
+.hero {
+  margin-bottom: 16px;
+  padding: 22px;
+  border-radius: 16px;
+  background: linear-gradient(120deg, #1f7a5c, #2f9672);
+  color: #ffffff;
+  box-shadow: 0 16px 35px rgba(31, 122, 92, 0.24);
+}
+
+.hero__label {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.hero__title {
+  margin: 8px 0 6px;
+  font-size: 30px;
+}
+
+.hero__subtitle {
+  margin: 0;
+  opacity: 0.92;
+}
+
+.panel {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid rgba(19, 42, 34, 0.1);
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.panel h2 {
+  margin: 0 0 12px;
+}
+
+.form {
+  display: grid;
+  gap: 10px;
+}
+
+.form input,
+.form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cfdad4;
+  border-radius: 10px;
+  font: inherit;
+}
+
+.form textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.form__actions {
+  display: flex;
+  gap: 8px;
+}
+
+button {
+  border: 1px solid #1f7a5c;
+  background: #1f7a5c;
+  color: #ffffff;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(1.05);
+}
+
+.button-secondary {
+  border-color: #8da59b;
+  background: #ffffff;
+  color: #224639;
+}
+
+.button-danger {
+  border-color: #b23636;
+  background: #d34f4f;
+}
+
+.panel__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  border: 1px solid #d5e1db;
+  border-radius: 12px;
+  background: #fcfffd;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.card__category {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #1f7a5c;
+}
+
+.card__name {
+  margin: 0;
+  font-size: 18px;
+}
+
+.card__description {
+  margin: 0;
+  line-height: 1.4;
+  color: #35584b;
+}
+
+.card__line {
+  margin: 0;
+  font-weight: 600;
+}
+
+.card__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+@media (max-width: 700px) {
+  .hero__title {
+    font-size: 24px;
+  }
+
+  .card__actions {
+    flex-direction: column;
+  }
+}

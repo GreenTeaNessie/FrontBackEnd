@@ -15,10 +15,87 @@ app.use(
 
 app.use(express.json());
 
-let users = [
-  { id: nanoid(6), name: "User 1", age: 16 },
-  { id: nanoid(6), name: "User 2", age: 18 },
-  { id: nanoid(6), name: "User 3", age: 20 }
+let properties = [
+  {
+    id: nanoid(6),
+    name: "Студия 27 м2, Мурино",
+    category: "Квартира",
+    description: "Компактная студия у метро Девяткино, после ремонта.",
+    price: 5100000,
+    stock: 1
+  },
+  {
+    id: nanoid(6),
+    name: "2-комнатная 58 м2, Кудрово",
+    category: "Квартира",
+    description: "Светлая квартира с кухней-гостиной в новом ЖК.",
+    price: 8900000,
+    stock: 1
+  },
+  {
+    id: nanoid(6),
+    name: "Апартаменты 42 м2, Васильевский остров",
+    category: "Апартаменты",
+    description: "Готовые апартаменты под аренду рядом с набережной.",
+    price: 11200000,
+    stock: 1
+  },
+  {
+    id: nanoid(6),
+    name: "3-комнатная 86 м2, Приморский район",
+    category: "Квартира",
+    description: "Семейная квартира с видом на парк и подземным паркингом.",
+    price: 17400000,
+    stock: 1
+  },
+  {
+    id: nanoid(6),
+    name: "Таунхаус 120 м2, Парголово",
+    category: "Таунхаус",
+    description: "Двухэтажный таунхаус с террасой и собственным участком.",
+    price: 19800000,
+    stock: 1
+  },
+  {
+    id: nanoid(6),
+    name: "Дом 165 м2, Всеволожский район",
+    category: "Дом",
+    description: "Дом для постоянного проживания, участок 8 соток.",
+    price: 23500000,
+    stock: 1
+  },
+  {
+    id: nanoid(6),
+    name: "Коммерческое помещение 95 м2, центр",
+    category: "Коммерция",
+    description: "Первый этаж, высокий пешеходный трафик, витринные окна.",
+    price: 27600000,
+    stock: 1
+  },
+  {
+    id: nanoid(6),
+    name: "Пентхаус 140 м2, Петроградская",
+    category: "Пентхаус",
+    description: "Панорамные окна, терраса 35 м2, премиальная отделка.",
+    price: 48900000,
+    stock: 1
+  },
+  {
+    id: nanoid(6),
+    name: "Участок 12 соток, Репино",
+    category: "Земельный участок",
+    description: "Ровный участок под ИЖС, все коммуникации по границе.",
+    price: 9900000,
+    stock: 1
+  },
+  {
+    id: nanoid(6),
+    name: "Склад 600 м2, Шушары",
+    category: "Склад",
+    description: "Отапливаемый склад класса B, удобный подъезд для фур.",
+    price: 35200000,
+    stock: 1
+  }
 ];
 
 app.use((req, res, next) => {
@@ -33,80 +110,120 @@ app.use((req, res, next) => {
   next();
 });
 
-function findUserOr404(id, res) {
-  const user = users.find((u) => u.id == id);
+function findPropertyOr404(id, res) {
+  const property = properties.find((p) => p.id == id);
 
-  if (!user) {
-    res.status(404).json({ error: "Пользователь не найден" });
+  if (!property) {
+    res.status(404).json({ error: "Объект недвижимости не найден" });
     return null;
   }
 
-  return user;
+  return property;
 }
 
-app.post("/api/users", (req, res) => {
-  const { name, age } = req.body;
+app.post("/api/properties", (req, res) => {
+  const { name, category, description, price, stock } = req.body;
 
-  if (!name || age === undefined) {
-    return res.status(400).json({ error: "Имя и возраст обязательны" });
+  if (!name || !category || !description || price === undefined || stock === undefined) {
+    return res.status(400).json({ error: "Все поля обязательны" });
   }
 
-  const newUser = {
+  const parsedPrice = Number(price);
+  const parsedStock = Number(stock);
+
+  if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+    return res.status(400).json({ error: "Цена должна быть положительным числом" });
+  }
+
+  if (!Number.isInteger(parsedStock) || parsedStock < 0) {
+    return res.status(400).json({ error: "Количество на складе должно быть целым числом от 0" });
+  }
+
+  const newProperty = {
     id: nanoid(6),
     name: String(name).trim(),
-    age: Number(age)
+    category: String(category).trim(),
+    description: String(description).trim(),
+    price: parsedPrice,
+    stock: parsedStock
   };
 
-  users.push(newUser);
-  res.status(201).json(newUser);
+  properties.push(newProperty);
+  res.status(201).json(newProperty);
 });
 
-app.get("/api/users", (req, res) => {
-  res.json(users);
+app.get("/api/properties", (req, res) => {
+  res.json(properties);
 });
 
-app.get("/api/users/:id", (req, res) => {
-  const user = findUserOr404(req.params.id, res);
+app.get("/api/properties/:id", (req, res) => {
+  const property = findPropertyOr404(req.params.id, res);
 
-  if (!user) {
+  if (!property) {
     return;
   }
 
-  res.json(user);
+  res.json(property);
 });
 
-app.patch("/api/users/:id", (req, res) => {
-  const user = findUserOr404(req.params.id, res);
+app.patch("/api/properties/:id", (req, res) => {
+  const property = findPropertyOr404(req.params.id, res);
 
-  if (!user) {
+  if (!property) {
     return;
   }
 
-  if (req.body?.name === undefined && req.body?.age === undefined) {
+  if (
+    req.body?.name === undefined &&
+    req.body?.category === undefined &&
+    req.body?.description === undefined &&
+    req.body?.price === undefined &&
+    req.body?.stock === undefined
+  ) {
     return res.status(400).json({ error: "Нет данных для обновления" });
   }
 
-  const { name, age } = req.body;
+  const { name, category, description, price, stock } = req.body;
 
   if (name !== undefined) {
-    user.name = String(name).trim();
+    property.name = String(name).trim();
   }
 
-  if (age !== undefined) {
-    user.age = Number(age);
+  if (category !== undefined) {
+    property.category = String(category).trim();
   }
 
-  res.json(user);
+  if (description !== undefined) {
+    property.description = String(description).trim();
+  }
+
+  if (price !== undefined) {
+    const parsedPrice = Number(price);
+    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+      return res.status(400).json({ error: "Цена должна быть положительным числом" });
+    }
+    property.price = parsedPrice;
+  }
+
+  if (stock !== undefined) {
+    const parsedStock = Number(stock);
+    if (!Number.isInteger(parsedStock) || parsedStock < 0) {
+      return res.status(400).json({ error: "Количество на складе должно быть целым числом от 0" });
+    }
+    property.stock = parsedStock;
+  }
+
+  res.json(property);
 });
 
-app.delete("/api/users/:id", (req, res) => {
-  const exists = users.some((u) => u.id === req.params.id);
+app.delete("/api/properties/:id", (req, res) => {
+  const exists = properties.some((p) => p.id === req.params.id);
 
   if (!exists) {
-    return res.status(404).json({ error: "Пользователь не найден" });
+    return res.status(404).json({ error: "Объект недвижимости не найден" });
   }
 
-  users = users.filter((u) => u.id !== req.params.id);
+  properties = properties.filter((p) => p.id !== req.params.id);
   res.status(204).send();
 });
 
