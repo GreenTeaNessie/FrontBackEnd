@@ -5,23 +5,23 @@ const apiClient = axios.create({
 });
 
 export const api = {
-  createUser: async (user) => {
-    const response = await apiClient.post("/users", user);
+  createProperty: async (property) => {
+    const response = await apiClient.post("/properties", property);
     return response.data;
   },
-  getUsers: async () => {
-    const response = await apiClient.get("/users");
+  getProperties: async () => {
+    const response = await apiClient.get("/properties");
     return response.data;
   },
-  getUserById: async (id) => {
-    const response = await apiClient.get(`/users/${id}`);
+  getPropertyById: async (id) => {
+    const response = await apiClient.get(`/properties/${id}`);
     return response.data;
   },
-  updateUser: async (id, user) => {
-    const response = await apiClient.patch(`/users/${id}`, user);
+  updateProperty: async (id, property) => {
+    const response = await apiClient.patch(`/properties/${id}`, property);
     return response.data;
   },
-  deleteUser: async (id) => {
-    await apiClient.delete(`/users/${id}`);
+  deleteProperty: async (id) => {
+    await apiClient.delete(`/properties/${id}`);
   }
 };

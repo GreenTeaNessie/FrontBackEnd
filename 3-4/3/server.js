@@ -3,17 +3,16 @@
 const app = express();
 const port = process.env.PORT || 3000;
 
-
 app.use(express.json());
 
-let users = [
-  { id: 1, name: "User 1", age: 16 },
-  { id: 2, name: "User 2", age: 18 },
-  { id: 3, name: "User 3", age: 20 }
+let properties = [
+  { id: 1, name: "Студия 27 м², Мурино", price: 5100000 },
+  { id: 2, name: "2-комнатная 58 м², Кудрово", price: 8900000 },
+  { id: 3, name: "Дом 165 м², Всеволожский район", price: 23500000 }
 ];
 
 app.get("/", (req, res) => {
-  res.send("Main page");
+  res.send("Главная страница — Продажа недвижимости");
 });
 
 app.get("/exchange-rate/:base", async (req, res) => {
@@ -57,82 +56,82 @@ app.get("/exchange-rate/:base", async (req, res) => {
   }
 });
 
-app.get("/users", (req, res) => {
-  res.json(users);
+app.get("/properties", (req, res) => {
+  res.json(properties);
 });
 
-app.get("/users/:id", (req, res) => {
-  const user = users.find((u) => u.id == req.params.id);
+app.get("/properties/:id", (req, res) => {
+  const property = properties.find((p) => p.id == req.params.id);
 
-  if (!user) {
-    return res.status(404).json({ error: "Пользователь не найден" });
+  if (!property) {
+    return res.status(404).json({ error: "Объект недвижимости не найден" });
   }
 
-  res.json(user);
+  res.json(property);
 });
 
-app.post("/users", (req, res) => {
-  const { name, age } = req.body;
+app.post("/properties", (req, res) => {
+  const { name, price } = req.body;
 
-  if (!name || age === undefined) {
-    return res.status(400).json({ error: "Имя и возраст обязательны" });
+  if (!name || price === undefined) {
+    return res.status(400).json({ error: "Название и цена обязательны" });
   }
 
-  const newUser = {
+  const newProperty = {
     id: Date.now(),
     name,
-    age: Number(age)
+    price: Number(price)
   };
 
-  users.push(newUser);
-  res.status(201).json(newUser);
+  properties.push(newProperty);
+  res.status(201).json(newProperty);
 });
 
-app.put("/users/:id", (req, res) => {
-  const user = users.find((u) => u.id == req.params.id);
+app.put("/properties/:id", (req, res) => {
+  const property = properties.find((p) => p.id == req.params.id);
 
-  if (!user) {
-    return res.status(404).json({ error: "Пользователь не найден" });
+  if (!property) {
+    return res.status(404).json({ error: "Объект недвижимости не найден" });
   }
 
-  const { name, age } = req.body;
+  const { name, price } = req.body;
 
-  if (!name || age === undefined) {
-    return res.status(400).json({ error: "Имя и возраст обязательны" });
+  if (!name || price === undefined) {
+    return res.status(400).json({ error: "Название и цена обязательны" });
   }
 
-  user.name = name;
-  user.age = Number(age);
+  property.name = name;
+  property.price = Number(price);
 
-  res.json(user);
+  res.json(property);
 });
 
-app.patch("/users/:id", (req, res) => {
-  const user = users.find((u) => u.id == req.params.id);
+app.patch("/properties/:id", (req, res) => {
+  const property = properties.find((p) => p.id == req.params.id);
 
-  if (!user) {
-    return res.status(404).json({ error: "Пользователь не найден" });
+  if (!property) {
+    return res.status(404).json({ error: "Объект недвижимости не найден" });
   }
 
-  const { name, age } = req.body;
+  const { name, price } = req.body;
 
   if (name !== undefined) {
-    user.name = name;
+    property.name = name;
   }
 
-  if (age !== undefined) {
-    user.age = Number(age);
+  if (price !== undefined) {
+    property.price = Number(price);
   }
 
-  res.json(user);
+  res.json(property);
 });
 
-app.delete("/users/:id", (req, res) => {
-  users = users.filter((u) => u.id != req.params.id);
+app.delete("/properties/:id", (req, res) => {
+  properties = properties.filter((p) => p.id != req.params.id);
   res.send("Ok");
 });
 
 app.listen(port, () => {
-  console.log(`Server started at http://localhost:${port}`);
+  console.log(`Сервер запущен на http://localhost:${port}`);
 });
 

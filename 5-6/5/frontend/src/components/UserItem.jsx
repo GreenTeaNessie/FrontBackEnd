@@ -1,4 +1,6 @@
-export default function UserItem({ user, onEdit, onDelete }) {
+export default function PropertyItem({ property, onEdit, onDelete }) {
+  const formattedPrice = Number(property.price).toLocaleString("ru-RU");
+
   return (
     <li
       style={{
@@ -12,15 +14,19 @@ export default function UserItem({ user, onEdit, onDelete }) {
         backgroundColor: "#ffffff"
       }}
     >
-      <span>
-        {user.name} ({user.age})
+      <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <strong>{property.name}</strong>
+        <span style={{ fontSize: 13, color: "#555" }}>
+          {property.category} &mdash; {formattedPrice} ₽
+        </span>
+        <span style={{ fontSize: 12, color: "#777" }}>{property.description}</span>
       </span>
       <span style={{ display: "flex", gap: 8 }}>
-        <button type="button" onClick={() => onEdit(user)}>
-          Edit
+        <button type="button" onClick={() => onEdit(property)}>
+          Редактировать
         </button>
-        <button type="button" onClick={() => onDelete(user.id)}>
-          Delete
+        <button type="button" onClick={() => onDelete(property.id)}>
+          Удалить
         </button>
       </span>
     </li>

@@ -1,29 +1,31 @@
-### Get all users
-GET http://localhost:3000/api/users
+### Получить все объекты недвижимости
+GET http://localhost:3000/api/properties
 
-### Get user by ID
-GET http://localhost:3000/api/users/{{id}}
+### Получить объект по ID
+GET http://localhost:3000/api/properties/{{id}}
 
-### Create user
-POST http://localhost:3000/api/users
+### Создать объект недвижимости
+POST http://localhost:3000/api/properties
 Content-Type: application/json
 
 {
-  "name": "Anna",
-  "age": 24
+  "name": "1-комнатная 35 м², Парнас",
+  "category": "Квартира",
+  "description": "Уютная квартира с видом на парк.",
+  "price": 7200000,
+  "stock": 1
 }
 
-### Update user
-PATCH http://localhost:3000/api/users/{{id}}
+### Обновить объект
+PATCH http://localhost:3000/api/properties/{{id}}
 Content-Type: application/json
 
 {
-  "name": "Anna Updated",
-  "age": 25
+  "price": 7500000
 }
 
-### Delete user
-DELETE http://localhost:3000/api/users/{{id}}
+### Удалить объект
+DELETE http://localhost:3000/api/properties/{{id}}
 
 ### Swagger UI
 GET http://localhost:3000/api-docs

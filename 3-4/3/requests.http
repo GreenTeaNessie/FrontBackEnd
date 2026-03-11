@@ -1,17 +1,37 @@
-﻿### Получить список пользователей
-GET http://localhost:3000/users
+﻿### Получить список объектов недвижимости
+GET http://localhost:3000/properties
 
-### Получить пользователя по ID
-GET http://localhost:3000/users/1
+### Получить объект по ID
+GET http://localhost:3000/properties/1
 
-### Создать пользователя
-POST http://localhost:3000/users
+### Создать объект недвижимости
+POST http://localhost:3000/properties
+Content-Type: application/json
 
-### Частично обновить пользователя
-PATCH http://localhost:3000/users/1
+{
+  "name": "1-комнатная 35 м², Парнас",
+  "price": 7200000
+}
 
-### Удалить пользователя
-DELETE http://localhost:3000/users/1
+### Полностью обновить объект
+PUT http://localhost:3000/properties/1
+Content-Type: application/json
+
+{
+  "name": "Студия 27 м², Мурино (обновлено)",
+  "price": 5300000
+}
+
+### Частично обновить объект
+PATCH http://localhost:3000/properties/1
+Content-Type: application/json
+
+{
+  "price": 4900000
+}
+
+### Удалить объект
+DELETE http://localhost:3000/properties/1
 
 ### Локальный прокси к ExchangeRate-API (все курсы от USD)
 GET http://localhost:3000/exchange-rate/USD

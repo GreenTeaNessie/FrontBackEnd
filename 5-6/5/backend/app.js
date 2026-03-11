@@ -26,24 +26,31 @@ app.use((req, res, next) => {
   next();
 });
 
-let users = [
-  { id: nanoid(6), name: "Peter", age: 16 },
-  { id: nanoid(6), name: "Ivan", age: 18 },
-  { id: nanoid(6), name: "Daria", age: 20 }
+let properties = [
+  { id: nanoid(6), name: "Студия 27 м², Мурино", category: "Квартира", description: "Компактная студия у метро Девяткино, после ремонта.", price: 5100000, stock: 1 },
+  { id: nanoid(6), name: "2-комнатная 58 м², Кудрово", category: "Квартира", description: "Светлая квартира с кухней-гостиной в новом ЖК.", price: 8900000, stock: 1 },
+  { id: nanoid(6), name: "Апартаменты 42 м², Васильевский остров", category: "Апартаменты", description: "Готовые апартаменты под аренду рядом с набережной.", price: 11200000, stock: 1 },
+  { id: nanoid(6), name: "3-комнатная 86 м², Приморский район", category: "Квартира", description: "Семейная квартира с видом на парк и подземным паркингом.", price: 17400000, stock: 1 },
+  { id: nanoid(6), name: "Таунхаус 120 м², Парголово", category: "Таунхаус", description: "Двухэтажный таунхаус с террасой и собственным участком.", price: 19800000, stock: 1 },
+  { id: nanoid(6), name: "Дом 165 м², Всеволожский район", category: "Дом", description: "Дом для постоянного проживания, участок 8 соток.", price: 23500000, stock: 1 },
+  { id: nanoid(6), name: "Коммерческое помещение 95 м², центр", category: "Коммерция", description: "Первый этаж, высокий пешеходный трафик, витринные окна.", price: 27600000, stock: 1 },
+  { id: nanoid(6), name: "Пентхаус 140 м², Петроградская", category: "Пентхаус", description: "Панорамные окна, терраса 35 м², премиальная отделка.", price: 48900000, stock: 1 },
+  { id: nanoid(6), name: "Участок 12 соток, Репино", category: "Земельный участок", description: "Ровный участок под ИЖС, все коммуникации по границе.", price: 9900000, stock: 1 },
+  { id: nanoid(6), name: "Склад 600 м², Шушары", category: "Склад", description: "Отапливаемый склад класса B, удобный подъезд для фур.", price: 35200000, stock: 1 }
 ];
 
 const swaggerOptions = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "Users API",
+      title: "API продажи недвижимости",
       version: "1.0.0",
-      description: "Simple REST API for users management"
+      description: "REST API для управления объектами недвижимости"
     },
     servers: [
       {
         url: `http://localhost:${port}`,
-        description: "Local server"
+        description: "Локальный сервер"
       }
     ]
   },
@@ -53,51 +60,61 @@ const swaggerOptions = {
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-function parseAge(value) {
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
-}
-
-function findUserOr404(id, res) {
-  const user = users.find((u) => u.id === id);
-  if (!user) {
-    res.status(404).json({ error: "User not found" });
+function findPropertyOr404(id, res) {
+  const property = properties.find((p) => p.id === id);
+  if (!property) {
+    res.status(404).json({ error: "Объект недвижимости не найден" });
     return null;
   }
-  return user;
+  return property;
 }
 
 /**
  * @swagger
  * components:
  *   schemas:
- *     User:
+ *     Property:
  *       type: object
  *       required:
  *         - name
- *         - age
+ *         - category
+ *         - description
+ *         - price
+ *         - stock
  *       properties:
  *         id:
  *           type: string
- *           description: Auto-generated user ID
+ *           description: Автоматически сгенерированный ID объекта
  *         name:
  *           type: string
- *           description: User name
- *         age:
+ *           description: Название объекта недвижимости
+ *         category:
+ *           type: string
+ *           description: Категория (Квартира, Дом, Участок и т.д.)
+ *         description:
+ *           type: string
+ *           description: Описание объекта
+ *         price:
+ *           type: number
+ *           description: Цена в рублях
+ *         stock:
  *           type: integer
- *           description: User age
+ *           description: Количество на складе
  *       example:
  *         id: abc123
- *         name: Peter
- *         age: 16
+ *         name: "Студия 27 м², Мурино"
+ *         category: "Квартира"
+ *         description: "Компактная студия у метро Девяткино"
+ *         price: 5100000
+ *         stock: 1
  */
 
 /**
  * @swagger
- * /api/users:
+ * /api/properties:
  *   post:
- *     summary: Create a new user
- *     tags: [Users]
+ *     summary: Создать новый объект недвижимости
+ *     tags: [Properties]
  *     requestBody:
  *       required: true
  *       content:
@@ -106,99 +123,126 @@ function findUserOr404(id, res) {
  *             type: object
  *             required:
  *               - name
- *               - age
+ *               - category
+ *               - description
+ *               - price
+ *               - stock
  *             properties:
  *               name:
  *                 type: string
- *               age:
+ *               category:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               stock:
  *                 type: integer
  *     responses:
  *       201:
- *         description: User created
+ *         description: Объект создан
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/User'
+ *               $ref: '#/components/schemas/Property'
  *       400:
- *         description: Invalid payload
+ *         description: Ошибка валидации
  */
-app.post("/api/users", (req, res) => {
-  const name = String(req.body?.name ?? "").trim();
-  const age = parseAge(req.body?.age);
+app.post("/api/properties", (req, res) => {
+  const { name, category, description, price, stock } = req.body;
 
-  if (!name || age === null) {
-    return res.status(400).json({ error: "Name and positive integer age are required" });
+  if (!name || !category || !description || price === undefined || stock === undefined) {
+    return res.status(400).json({ error: "Все поля обязательны" });
   }
 
-  const newUser = { id: nanoid(6), name, age };
-  users.push(newUser);
-  return res.status(201).json(newUser);
+  const parsedPrice = Number(price);
+  const parsedStock = Number(stock);
+
+  if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+    return res.status(400).json({ error: "Цена должна быть положительным числом" });
+  }
+
+  if (!Number.isInteger(parsedStock) || parsedStock < 0) {
+    return res.status(400).json({ error: "Количество должно быть целым числом от 0" });
+  }
+
+  const newProperty = {
+    id: nanoid(6),
+    name: String(name).trim(),
+    category: String(category).trim(),
+    description: String(description).trim(),
+    price: parsedPrice,
+    stock: parsedStock
+  };
+
+  properties.push(newProperty);
+  return res.status(201).json(newProperty);
 });
 
 /**
  * @swagger
- * /api/users:
+ * /api/properties:
  *   get:
- *     summary: Get all users
- *     tags: [Users]
+ *     summary: Получить все объекты недвижимости
+ *     tags: [Properties]
  *     responses:
  *       200:
- *         description: List of users
+ *         description: Список объектов
  *         content:
  *           application/json:
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/User'
+ *                 $ref: '#/components/schemas/Property'
  */
-app.get("/api/users", (req, res) => {
-  res.json(users);
+app.get("/api/properties", (req, res) => {
+  res.json(properties);
 });
 
 /**
  * @swagger
- * /api/users/{id}:
+ * /api/properties/{id}:
  *   get:
- *     summary: Get user by ID
- *     tags: [Users]
+ *     summary: Получить объект по ID
+ *     tags: [Properties]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: User ID
+ *         description: ID объекта
  *     responses:
  *       200:
- *         description: User object
+ *         description: Данные объекта
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/User'
+ *               $ref: '#/components/schemas/Property'
  *       404:
- *         description: User not found
+ *         description: Объект не найден
  */
-app.get("/api/users/:id", (req, res) => {
-  const user = findUserOr404(req.params.id, res);
-  if (!user) {
+app.get("/api/properties/:id", (req, res) => {
+  const property = findPropertyOr404(req.params.id, res);
+  if (!property) {
     return;
   }
-  res.json(user);
+  res.json(property);
 });
 
 /**
  * @swagger
- * /api/users/{id}:
+ * /api/properties/{id}:
  *   patch:
- *     summary: Update user fields
- *     tags: [Users]
+ *     summary: Обновить данные объекта
+ *     tags: [Properties]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: User ID
+ *         description: ID объекта
  *     requestBody:
  *       required: true
  *       content:
@@ -208,87 +252,105 @@ app.get("/api/users/:id", (req, res) => {
  *             properties:
  *               name:
  *                 type: string
- *               age:
+ *               category:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               stock:
  *                 type: integer
  *     responses:
  *       200:
- *         description: Updated user
+ *         description: Обновлённый объект
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/User'
+ *               $ref: '#/components/schemas/Property'
  *       400:
- *         description: Invalid payload
+ *         description: Нет данных для обновления
  *       404:
- *         description: User not found
+ *         description: Объект не найден
  */
-app.patch("/api/users/:id", (req, res) => {
-  const user = findUserOr404(req.params.id, res);
-  if (!user) {
+app.patch("/api/properties/:id", (req, res) => {
+  const property = findPropertyOr404(req.params.id, res);
+  if (!property) {
     return;
   }
 
-  if (req.body?.name === undefined && req.body?.age === undefined) {
-    return res.status(400).json({ error: "Nothing to update" });
+  const { name, category, description, price, stock } = req.body;
+
+  if (
+    name === undefined &&
+    category === undefined &&
+    description === undefined &&
+    price === undefined &&
+    stock === undefined
+  ) {
+    return res.status(400).json({ error: "Нет данных для обновления" });
   }
 
-  if (req.body?.name !== undefined) {
-    const name = String(req.body.name).trim();
-    if (!name) {
-      return res.status(400).json({ error: "Name cannot be empty" });
+  if (name !== undefined) property.name = String(name).trim();
+  if (category !== undefined) property.category = String(category).trim();
+  if (description !== undefined) property.description = String(description).trim();
+
+  if (price !== undefined) {
+    const parsedPrice = Number(price);
+    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+      return res.status(400).json({ error: "Цена должна быть положительным числом" });
     }
-    user.name = name;
+    property.price = parsedPrice;
   }
 
-  if (req.body?.age !== undefined) {
-    const age = parseAge(req.body.age);
-    if (age === null) {
-      return res.status(400).json({ error: "Age must be a positive integer" });
+  if (stock !== undefined) {
+    const parsedStock = Number(stock);
+    if (!Number.isInteger(parsedStock) || parsedStock < 0) {
+      return res.status(400).json({ error: "Количество должно быть целым числом от 0" });
     }
-    user.age = age;
+    property.stock = parsedStock;
   }
 
-  return res.json(user);
+  return res.json(property);
 });
 
 /**
  * @swagger
- * /api/users/{id}:
+ * /api/properties/{id}:
  *   delete:
- *     summary: Delete user
- *     tags: [Users]
+ *     summary: Удалить объект недвижимости
+ *     tags: [Properties]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: User ID
+ *         description: ID объекта
  *     responses:
  *       204:
- *         description: User deleted
+ *         description: Объект удалён
  *       404:
- *         description: User not found
+ *         description: Объект не найден
  */
-app.delete("/api/users/:id", (req, res) => {
-  const index = users.findIndex((u) => u.id === req.params.id);
+app.delete("/api/properties/:id", (req, res) => {
+  const index = properties.findIndex((p) => p.id === req.params.id);
   if (index === -1) {
-    return res.status(404).json({ error: "User not found" });
+    return res.status(404).json({ error: "Объект недвижимости не найден" });
   }
-  users.splice(index, 1);
+  properties.splice(index, 1);
   return res.status(204).send();
 });
 
 app.use((req, res) => {
-  res.status(404).json({ error: "Not found" });
+  res.status(404).json({ error: "Маршрут не найден" });
 });
 
 app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err);
-  res.status(500).json({ error: "Internal server error" });
+  console.error("Необработанная ошибка:", err);
+  res.status(500).json({ error: "Внутренняя ошибка сервера" });
 });
 
 app.listen(port, () => {
-  console.log(`Server started at http://localhost:${port}`);
+  console.log(`Сервер запущен на http://localhost:${port}`);
   console.log(`Swagger UI: http://localhost:${port}/api-docs`);
 });

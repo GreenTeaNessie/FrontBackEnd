@@ -1,46 +1,55 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
-import UserItem from "../components/UserItem";
-import UserModal from "../components/UserModal";
+import PropertyItem from "../components/UserItem";
+import PropertyModal from "../components/UserModal";
 
-export default function UsersPage() {
-  const [users, setUsers] = useState([]);
+export default function PropertiesPage() {
+  const [properties, setProperties] = useState([]);
   const [name, setName] = useState("");
-  const [age, setAge] = useState("");
+  const [category, setCategory] = useState("");
+  const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
+  const [stock, setStock] = useState("1");
   const [editingId, setEditingId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const loadUsers = async () => {
+  const loadProperties = async () => {
     try {
       setLoading(true);
-      const response = await api.getUsers();
-      setUsers(response);
+      const response = await api.getProperties();
+      setProperties(response);
     } catch (requestError) {
       console.error(requestError);
-      setError("Failed to load users");
+      setError("Не удалось загрузить объекты");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadUsers();
+    loadProperties();
   }, []);
 
   const openCreateModal = () => {
     setName("");
-    setAge("");
+    setCategory("");
+    setDescription("");
+    setPrice("");
+    setStock("1");
     setEditingId(null);
     setError("");
     setIsModalOpen(true);
   };
 
-  const openEditModal = (user) => {
-    setName(user.name);
-    setAge(String(user.age));
-    setEditingId(user.id);
+  const openEditModal = (property) => {
+    setName(property.name);
+    setCategory(property.category);
+    setDescription(property.description);
+    setPrice(String(property.price));
+    setStock(String(property.stock));
+    setEditingId(property.id);
     setError("");
     setIsModalOpen(true);
   };
@@ -49,7 +58,10 @@ export default function UsersPage() {
     setIsModalOpen(false);
     setEditingId(null);
     setName("");
-    setAge("");
+    setCategory("");
+    setDescription("");
+    setPrice("");
+    setStock("1");
     setError("");
   };
 
@@ -57,49 +69,74 @@ export default function UsersPage() {
     event.preventDefault();
 
     const trimmedName = name.trim();
-    const parsedAge = Number(age);
+    const trimmedCategory = category.trim();
+    const trimmedDescription = description.trim();
+    const parsedPrice = Number(price);
+    const parsedStock = Number(stock);
 
-    if (!trimmedName || !Number.isInteger(parsedAge) || parsedAge <= 0) {
-      setError("Name and positive integer age are required");
+    if (!trimmedName || !trimmedCategory || !trimmedDescription) {
+      setError("Заполните название, категорию и описание");
+      return;
+    }
+
+    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+      setError("Введите корректную цену");
+      return;
+    }
+
+    if (!Number.isInteger(parsedStock) || parsedStock < 0) {
+      setError("Введите корректное количество");
       return;
     }
 
     try {
       setError("");
       if (editingId) {
-        await api.updateUser(editingId, { name: trimmedName, age: parsedAge });
+        await api.updateProperty(editingId, {
+          name: trimmedName,
+          category: trimmedCategory,
+          description: trimmedDescription,
+          price: parsedPrice,
+          stock: parsedStock
+        });
       } else {
-        await api.createUser({ name: trimmedName, age: parsedAge });
+        await api.createProperty({
+          name: trimmedName,
+          category: trimmedCategory,
+          description: trimmedDescription,
+          price: parsedPrice,
+          stock: parsedStock
+        });
       }
 
       closeModal();
-      await loadUsers();
+      await loadProperties();
     } catch (requestError) {
       console.error(requestError);
-      setError("Failed to save user");
+      setError("Ошибка сохранения объекта");
     }
   };
 
   const handleDelete = async (id) => {
-    const confirmed = window.confirm("Delete this user?");
+    const confirmed = window.confirm("Удалить объект недвижимости?");
     if (!confirmed) {
       return;
     }
 
     try {
       setError("");
-      await api.deleteUser(id);
-      await loadUsers();
+      await api.deleteProperty(id);
+      await loadProperties();
     } catch (requestError) {
       console.error(requestError);
-      setError("Failed to delete user");
+      setError("Ошибка удаления объекта");
     }
   };
 
   return (
     <main
       style={{
-        maxWidth: 720,
+        maxWidth: 780,
         margin: "24px auto",
         padding: "0 12px",
         fontFamily: "Segoe UI, sans-serif"
@@ -113,31 +150,37 @@ export default function UsersPage() {
           marginBottom: 16
         }}
       >
-        <h1 style={{ margin: 0 }}>Users</h1>
+        <h1 style={{ margin: 0 }}>Продажа недвижимости</h1>
         <button type="button" onClick={openCreateModal}>
-          Add user
+          + Добавить объект
         </button>
       </header>
 
-      {loading ? <div>Loading...</div> : null}
+      {loading ? <div>Загрузка...</div> : null}
 
-      {!loading && users.length === 0 ? <div>No users yet</div> : null}
+      {!loading && properties.length === 0 ? <div>Объектов пока нет</div> : null}
 
-      {!loading && users.length > 0 ? (
+      {!loading && properties.length > 0 ? (
         <ul style={{ padding: 0, listStyle: "none", margin: 0 }}>
-          {users.map((user) => (
-            <UserItem key={user.id} user={user} onEdit={openEditModal} onDelete={handleDelete} />
+          {properties.map((property) => (
+            <PropertyItem key={property.id} property={property} onEdit={openEditModal} onDelete={handleDelete} />
           ))}
         </ul>
       ) : null}
 
-      <UserModal
+      <PropertyModal
         isOpen={isModalOpen}
-        title={editingId ? "Edit user" : "Create user"}
+        title={editingId ? "Редактирование объекта" : "Создание объекта"}
         name={name}
-        age={age}
+        category={category}
+        description={description}
+        price={price}
+        stock={stock}
         onNameChange={setName}
-        onAgeChange={setAge}
+        onCategoryChange={setCategory}
+        onDescriptionChange={setDescription}
+        onPriceChange={setPrice}
+        onStockChange={setStock}
         onSubmit={handleSubmit}
         onClose={closeModal}
         error={error}

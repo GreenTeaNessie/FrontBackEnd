@@ -1,5 +1,5 @@
-import UsersPage from "./pages/UsersPage";
+import PropertiesPage from "./pages/PropertiesPage";
 
 export default function App() {
-  return <UsersPage />;
+  return <PropertiesPage />;
 }
