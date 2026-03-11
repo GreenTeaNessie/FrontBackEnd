@@ -1,4 +1,4 @@
-import PropertiesPage from "./pages/PropertiesPage";
+import PropertiesPage from "./pages/UsersPage";
 
 export default function App() {
   return <PropertiesPage />;
