@@ -1,0 +1,86 @@
+### Health
+GET http://localhost:3000/api/health
+
+###
+
+### Register
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "student",
+  "password": "1234"
+}
+
+###
+
+### Login
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "student",
+  "password": "1234"
+}
+
+###
+
+### Refresh
+POST http://localhost:3000/api/auth/refresh
+Content-Type: application/json
+x-refresh-token: REPLACE_WITH_REFRESH
+
+{
+  "refreshToken": "REPLACE_WITH_REFRESH"
+}
+
+###
+
+### Me
+GET http://localhost:3000/api/auth/me
+Authorization: Bearer REPLACE_WITH_ACCESS
+
+###
+
+### List products
+GET http://localhost:3000/api/products
+
+###
+
+### Create product
+POST http://localhost:3000/api/products
+Content-Type: application/json
+Authorization: Bearer REPLACE_WITH_ACCESS
+
+{
+  "title": "Монитор 27",
+  "category": "Электроника",
+  "description": "IPS-монитор для учебы и работы.",
+  "price": 18990
+}
+
+###
+
+### Product by id
+GET http://localhost:3000/api/products/REPLACE_WITH_ID
+Authorization: Bearer REPLACE_WITH_ACCESS
+
+###
+
+### Update product
+PUT http://localhost:3000/api/products/REPLACE_WITH_ID
+Content-Type: application/json
+Authorization: Bearer REPLACE_WITH_ACCESS
+
+{
+  "title": "Монитор 27 Pro",
+  "category": "Электроника",
+  "description": "Обновленная модель с USB-C.",
+  "price": 24990
+}
+
+###
+
+### Delete product
+DELETE http://localhost:3000/api/products/REPLACE_WITH_ID
+Authorization: Bearer REPLACE_WITH_ACCESS

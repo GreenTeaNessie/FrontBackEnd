@@ -1,0 +1,89 @@
+### Регистрация пользователя
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "ivan@example.com",
+  "first_name": "Иван",
+  "last_name": "Иванов",
+  "password": "qwerty123"
+}
+
+###
+
+### Вход в систему (получить JWT)
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "ivan@example.com",
+  "password": "qwerty123"
+}
+
+###
+
+### Вход с неверным паролем
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "ivan@example.com",
+  "password": "wrongpassword"
+}
+
+###
+
+### Текущий пользователь (требуется JWT)
+# Вставьте accessToken из ответа /login
+GET http://localhost:3000/api/auth/me
+Authorization: Bearer REPLACE_WITH_TOKEN
+
+###
+
+### Создать товар (без авторизации)
+POST http://localhost:3000/api/products
+Content-Type: application/json
+
+{
+  "title": "Ноутбук Pro",
+  "category": "Электроника",
+  "description": "Мощный ноутбук для работы и учёбы",
+  "price": 89990
+}
+
+###
+
+### Получить список товаров (без авторизации)
+GET http://localhost:3000/api/products
+
+###
+
+### Получить товар по id (требуется JWT)
+# Вставьте id из ответа POST /api/products
+GET http://localhost:3000/api/products/REPLACE_WITH_ID
+Authorization: Bearer REPLACE_WITH_TOKEN
+
+###
+
+### Обновить товар (требуется JWT)
+PUT http://localhost:3000/api/products/REPLACE_WITH_ID
+Content-Type: application/json
+Authorization: Bearer REPLACE_WITH_TOKEN
+
+{
+  "title": "Ноутбук Pro Max",
+  "category": "Электроника",
+  "description": "Обновлённый ноутбук с улучшенными характеристиками",
+  "price": 99990
+}
+
+###
+
+### Удалить товар (требуется JWT)
+DELETE http://localhost:3000/api/products/REPLACE_WITH_ID
+Authorization: Bearer REPLACE_WITH_TOKEN
+
+###
+
+### Запрос без авторизации (должен вернуть 401)
+GET http://localhost:3000/api/products/REPLACE_WITH_ID
