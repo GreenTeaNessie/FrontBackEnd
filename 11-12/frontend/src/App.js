@@ -8,11 +8,13 @@ const emptyAuthForm = {
   role: "user"
 };
 
-const emptyProductForm = {
+const emptyPropertyForm = {
   title: "",
-  category: "",
+  propertyType: "",
+  address: "",
   description: "",
-  price: ""
+  price: "",
+  area: ""
 };
 
 const emptyUserForm = {
@@ -22,15 +24,15 @@ const emptyUserForm = {
 };
 
 const roleLabels = {
-  user: "Пользователь",
-  seller: "Продавец",
+  user: "Покупатель",
+  seller: "Риелтор",
   admin: "Администратор"
 };
 
 const demoAccounts = [
   { username: "admin", password: "admin123", role: "admin" },
-  { username: "seller", password: "seller123", role: "seller" },
-  { username: "user", password: "user123", role: "user" }
+  { username: "realtor", password: "realtor123", role: "seller" },
+  { username: "buyer", password: "buyer123", role: "user" }
 ];
 
 function formatPrice(value) {
@@ -44,31 +46,31 @@ function mapError(error, fallbackMessage) {
 export default function App() {
   const [mode, setMode] = useState("login");
   const [authForm, setAuthForm] = useState(emptyAuthForm);
-  const [productForm, setProductForm] = useState(emptyProductForm);
+  const [propertyForm, setPropertyForm] = useState(emptyPropertyForm);
   const [managedUserForm, setManagedUserForm] = useState(emptyUserForm);
-  const [products, setProducts] = useState([]);
+  const [properties, setProperties] = useState([]);
   const [users, setUsers] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedProperty, setSelectedProperty] = useState(null);
   const [selectedManagedUser, setSelectedManagedUser] = useState(null);
-  const [productFormMode, setProductFormMode] = useState("create");
+  const [propertyFormMode, setPropertyFormMode] = useState("create");
   const [currentUser, setCurrentUser] = useState(null);
   const [isBusy, setIsBusy] = useState(false);
   const [infoMessage, setInfoMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const canViewProducts = Boolean(currentUser);
-  const canEditProducts = currentUser && ["seller", "admin"].includes(currentUser.role);
+  const canViewProperties = Boolean(currentUser);
+  const canEditProperties = currentUser && ["seller", "admin"].includes(currentUser.role);
   const canManageUsers = currentUser?.role === "admin";
-  const canDeleteProducts = currentUser?.role === "admin";
+  const canDeleteProperties = currentUser?.role === "admin";
 
   useEffect(() => {
     const handleSessionExpired = () => {
       setCurrentUser(null);
-      setProducts([]);
+      setProperties([]);
       setUsers([]);
-      setSelectedProduct(null);
+      setSelectedProperty(null);
       setSelectedManagedUser(null);
-      setProductForm(emptyProductForm);
+      setPropertyForm(emptyPropertyForm);
       setManagedUserForm(emptyUserForm);
       setErrorMessage("Сессия истекла. Войдите заново.");
     };
@@ -106,24 +108,26 @@ export default function App() {
   }
 
   async function loadProtectedData(user) {
-    const loadedProducts = await api.getProducts();
-    setProducts(loadedProducts);
+    const loadedProperties = await api.getProperties();
+    setProperties(loadedProperties);
 
-    if (selectedProduct) {
-      const freshSelectedProduct = loadedProducts.find(
-        (product) => product.id === selectedProduct.id
+    if (selectedProperty) {
+      const freshSelectedProperty = loadedProperties.find(
+        (property) => property.id === selectedProperty.id
       );
-      setSelectedProduct(freshSelectedProduct || null);
+      setSelectedProperty(freshSelectedProperty || null);
 
-      if (freshSelectedProduct) {
-        setProductForm((current) =>
-          productFormMode === "edit"
+      if (freshSelectedProperty) {
+        setPropertyForm((current) =>
+          propertyFormMode === "edit"
             ? {
                 ...current,
-                title: freshSelectedProduct.title,
-                category: freshSelectedProduct.category,
-                description: freshSelectedProduct.description,
-                price: String(freshSelectedProduct.price)
+                title: freshSelectedProperty.title,
+                propertyType: freshSelectedProperty.propertyType,
+                address: freshSelectedProperty.address,
+                description: freshSelectedProperty.description,
+                price: String(freshSelectedProperty.price),
+                area: String(freshSelectedProperty.area)
               }
             : current
         );
@@ -170,9 +174,9 @@ export default function App() {
     }
   }
 
-  function resetProductForm() {
-    setProductFormMode("create");
-    setProductForm(emptyProductForm);
+  function resetPropertyForm() {
+    setPropertyFormMode("create");
+    setPropertyForm(emptyPropertyForm);
   }
 
   async function handleAuthSubmit(event) {
@@ -213,18 +217,18 @@ export default function App() {
   function handleLogout() {
     clearTokens();
     setCurrentUser(null);
-    setProducts([]);
+    setProperties([]);
     setUsers([]);
-    setSelectedProduct(null);
+    setSelectedProperty(null);
     setSelectedManagedUser(null);
-    resetProductForm();
+    resetPropertyForm();
     setManagedUserForm(emptyUserForm);
     setInfoMessage("Вы вышли из системы.");
     setErrorMessage("");
   }
 
-  async function handleSelectProduct(productId) {
-    if (!canViewProducts) {
+  async function handleSelectProperty(propertyId) {
+    if (!canViewProperties) {
       return;
     }
 
@@ -232,36 +236,38 @@ export default function App() {
     setErrorMessage("");
 
     try {
-      const product = await api.getProductById(productId);
-      setSelectedProduct(product);
+      const property = await api.getPropertyById(propertyId);
+      setSelectedProperty(property);
     } catch (error) {
-      setErrorMessage(mapError(error, "Не удалось получить товар."));
+      setErrorMessage(mapError(error, "Не удалось получить объект недвижимости."));
     } finally {
       setIsBusy(false);
     }
   }
 
-  function handleEditSelectedProduct() {
-    if (!selectedProduct || !canEditProducts) {
+  function handleEditSelectedProperty() {
+    if (!selectedProperty || !canEditProperties) {
       return;
     }
 
-    setProductFormMode("edit");
-    setProductForm({
-      title: selectedProduct.title,
-      category: selectedProduct.category,
-      description: selectedProduct.description,
-      price: String(selectedProduct.price)
+    setPropertyFormMode("edit");
+    setPropertyForm({
+      title: selectedProperty.title,
+      propertyType: selectedProperty.propertyType,
+      address: selectedProperty.address,
+      description: selectedProperty.description,
+      price: String(selectedProperty.price),
+      area: String(selectedProperty.area)
     });
-    setInfoMessage("Форма заполнена данными товара.");
+    setInfoMessage("Форма заполнена данными объекта недвижимости.");
     setErrorMessage("");
   }
 
-  async function handleProductSubmit(event) {
+  async function handlePropertySubmit(event) {
     event.preventDefault();
 
-    if (!canEditProducts) {
-      setErrorMessage("Эта операция доступна только продавцу или администратору.");
+    if (!canEditProperties) {
+      setErrorMessage("Эта операция доступна только риелтору или администратору.");
       return;
     }
 
@@ -270,28 +276,28 @@ export default function App() {
     setInfoMessage("");
 
     try {
-      if (productFormMode === "edit" && selectedProduct) {
-        const updatedProduct = await api.updateProduct(selectedProduct.id, productForm);
-        setSelectedProduct(updatedProduct);
-        setInfoMessage("Товар обновлен.");
+      if (propertyFormMode === "edit" && selectedProperty) {
+        const updatedProperty = await api.updateProperty(selectedProperty.id, propertyForm);
+        setSelectedProperty(updatedProperty);
+        setInfoMessage("Объявление обновлено.");
       } else {
-        const createdProduct = await api.createProduct(productForm);
-        setSelectedProduct(createdProduct);
-        setInfoMessage("Товар создан.");
+        const createdProperty = await api.createProperty(propertyForm);
+        setSelectedProperty(createdProperty);
+        setInfoMessage("Объявление создано.");
       }
 
-      resetProductForm();
+      resetPropertyForm();
       await loadProtectedData(currentUser);
     } catch (error) {
-      setErrorMessage(mapError(error, "Не удалось сохранить товар."));
+      setErrorMessage(mapError(error, "Не удалось сохранить объявление."));
     } finally {
       setIsBusy(false);
     }
   }
 
-  async function handleDeleteSelectedProduct() {
-    if (!selectedProduct || !canDeleteProducts) {
-      setErrorMessage("Удаление товаров доступно только администратору.");
+  async function handleDeleteSelectedProperty() {
+    if (!selectedProperty || !canDeleteProperties) {
+      setErrorMessage("Удаление объявлений доступно только администратору.");
       return;
     }
 
@@ -300,13 +306,13 @@ export default function App() {
     setInfoMessage("");
 
     try {
-      await api.deleteProduct(selectedProduct.id);
-      setSelectedProduct(null);
-      resetProductForm();
+      await api.deleteProperty(selectedProperty.id);
+      setSelectedProperty(null);
+      resetPropertyForm();
       await loadProtectedData(currentUser);
-      setInfoMessage("Товар удален.");
+      setInfoMessage("Объявление удалено.");
     } catch (error) {
-      setErrorMessage(mapError(error, "Не удалось удалить товар."));
+      setErrorMessage(mapError(error, "Не удалось удалить объявление."));
     } finally {
       setIsBusy(false);
     }
@@ -392,16 +398,16 @@ export default function App() {
       <header className="hero">
         <div>
           <p className="eyebrow">Практики 11-12</p>
-          <h1>RBAC-панель для товаров и пользователей</h1>
+          <h1>RBAC-панель для недвижимости и пользователей</h1>
           <p className="hero-text">
-            Один интерфейс для трех ролей: пользователь просматривает товары,
-            продавец управляет каталогом, администратор дополнительно управляет
-            пользователями и блокировками.
+            Один интерфейс для трех ролей: покупатель просматривает объекты,
+            риелтор публикует и редактирует объявления, администратор дополнительно
+            управляет пользователями и модерирует каталог.
           </p>
           <div className="capsules">
-            <span>user: просмотр товаров</span>
-            <span>seller: создание и редактирование</span>
-            <span>admin: товары + пользователи</span>
+            <span>buyer: просмотр объектов</span>
+            <span>realtor: создание и редактирование</span>
+            <span>admin: объявления + пользователи</span>
           </div>
         </div>
 
@@ -461,7 +467,7 @@ export default function App() {
                     username: event.target.value
                   }))
                 }
-                placeholder="seller"
+                placeholder="realtor"
                 required
               />
             </label>
@@ -476,7 +482,7 @@ export default function App() {
                     password: event.target.value
                   }))
                 }
-                placeholder="seller123"
+                placeholder="realtor123"
                 required
               />
             </label>
@@ -493,8 +499,8 @@ export default function App() {
                     }))
                   }
                 >
-                  <option value="user">Пользователь</option>
-                  <option value="seller">Продавец</option>
+                  <option value="user">Покупатель</option>
+                  <option value="seller">Риелтор</option>
                   <option value="admin">Администратор</option>
                 </select>
               </label>
@@ -524,8 +530,8 @@ export default function App() {
 
         <section className="panel">
           <div className="panel-header">
-            <h2>Каталог товаров</h2>
-            {canViewProducts ? (
+            <h2>Каталог недвижимости</h2>
+            {canViewProperties ? (
               <button
                 className="ghost-button"
                 type="button"
@@ -536,21 +542,22 @@ export default function App() {
             ) : null}
           </div>
 
-          {canViewProducts ? (
+          {canViewProperties ? (
             <div className="products-list">
-              {products.map((product) => (
+              {properties.map((property) => (
                 <button
-                  key={product.id}
+                  key={property.id}
                   className={`product-card ${
-                    selectedProduct?.id === product.id ? "selected" : ""
+                    selectedProperty?.id === property.id ? "selected" : ""
                   }`}
-                  onClick={() => handleSelectProduct(product.id)}
+                  onClick={() => handleSelectProperty(property.id)}
                   type="button"
                 >
-                  <span className="product-category">{product.category}</span>
-                  <strong>{product.title}</strong>
-                  <span>{formatPrice(product.price)} руб.</span>
-                  <small>Автор: {product.ownerUsername}</small>
+                  <span className="product-category">{property.propertyType}</span>
+                  <strong>{property.title}</strong>
+                  <span>{property.address}</span>
+                  <span>{formatPrice(property.price)} руб.</span>
+                  <small>Площадь: {property.area} м²</small>
                 </button>
               ))}
             </div>
@@ -561,22 +568,24 @@ export default function App() {
 
         <section className="panel">
           <div className="panel-header">
-            <h2>{productFormMode === "edit" ? "Редактирование товара" : "Новый товар"}</h2>
-            {canEditProducts ? (
-              <button className="ghost-button" type="button" onClick={resetProductForm}>
+            <h2>
+              {propertyFormMode === "edit" ? "Редактирование объявления" : "Новое объявление"}
+            </h2>
+            {canEditProperties ? (
+              <button className="ghost-button" type="button" onClick={resetPropertyForm}>
                 Очистить форму
               </button>
             ) : null}
           </div>
 
-          {canEditProducts ? (
-            <form className="stack" onSubmit={handleProductSubmit}>
+          {canEditProperties ? (
+            <form className="stack" onSubmit={handlePropertySubmit}>
               <label>
-                Название
+                Заголовок объявления
                 <input
-                  value={productForm.title}
+                  value={propertyForm.title}
                   onChange={(event) =>
-                    setProductForm((current) => ({
+                    setPropertyForm((current) => ({
                       ...current,
                       title: event.target.value
                     }))
@@ -585,13 +594,26 @@ export default function App() {
                 />
               </label>
               <label>
-                Категория
+                Тип объекта
                 <input
-                  value={productForm.category}
+                  value={propertyForm.propertyType}
                   onChange={(event) =>
-                    setProductForm((current) => ({
+                    setPropertyForm((current) => ({
                       ...current,
-                      category: event.target.value
+                      propertyType: event.target.value
+                    }))
+                  }
+                  required
+                />
+              </label>
+              <label>
+                Адрес
+                <input
+                  value={propertyForm.address}
+                  onChange={(event) =>
+                    setPropertyForm((current) => ({
+                      ...current,
+                      address: event.target.value
                     }))
                   }
                   required
@@ -601,9 +623,9 @@ export default function App() {
                 Описание
                 <textarea
                   rows="4"
-                  value={productForm.description}
+                  value={propertyForm.description}
                   onChange={(event) =>
-                    setProductForm((current) => ({
+                    setPropertyForm((current) => ({
                       ...current,
                       description: event.target.value
                     }))
@@ -612,13 +634,13 @@ export default function App() {
                 />
               </label>
               <label>
-                Цена
+                Стоимость
                 <input
                   type="number"
                   min="1"
-                  value={productForm.price}
+                  value={propertyForm.price}
                   onChange={(event) =>
-                    setProductForm((current) => ({
+                    setPropertyForm((current) => ({
                       ...current,
                       price: event.target.value
                     }))
@@ -626,13 +648,28 @@ export default function App() {
                   required
                 />
               </label>
+              <label>
+                Площадь, м²
+                <input
+                  type="number"
+                  min="1"
+                  value={propertyForm.area}
+                  onChange={(event) =>
+                    setPropertyForm((current) => ({
+                      ...current,
+                      area: event.target.value
+                    }))
+                  }
+                  required
+                />
+              </label>
               <button className="primary-button" type="submit" disabled={isBusy}>
-                {productFormMode === "edit" ? "Сохранить изменения" : "Создать товар"}
+                {propertyFormMode === "edit" ? "Сохранить изменения" : "Создать объявление"}
               </button>
             </form>
           ) : (
             <p className="empty">
-              Создание и редактирование товаров доступно продавцу и администратору.
+              Создание и редактирование объявлений доступно риелтору и администратору.
             </p>
           )}
         </section>
@@ -640,16 +677,20 @@ export default function App() {
 
       <section className="panel details-panel">
         <div className="panel-header">
-          <h2>Карточка товара</h2>
-          {selectedProduct ? (
+          <h2>Карточка объекта</h2>
+          {selectedProperty ? (
             <div className="inline-actions">
-              {canEditProducts ? (
-                <button className="ghost-button" type="button" onClick={handleEditSelectedProduct}>
+              {canEditProperties ? (
+                <button className="ghost-button" type="button" onClick={handleEditSelectedProperty}>
                   Редактировать
                 </button>
               ) : null}
-              {canDeleteProducts ? (
-                <button className="danger-button" type="button" onClick={handleDeleteSelectedProduct}>
+              {canDeleteProperties ? (
+                <button
+                  className="danger-button"
+                  type="button"
+                  onClick={handleDeleteSelectedProperty}
+                >
                   Удалить
                 </button>
               ) : null}
@@ -657,31 +698,32 @@ export default function App() {
           ) : null}
         </div>
 
-        {selectedProduct ? (
+        {selectedProperty ? (
           <div className="details-card">
             <div className="details-meta">
-              <span>{selectedProduct.category}</span>
-              <span>{formatPrice(selectedProduct.price)} руб.</span>
+              <span>{selectedProperty.propertyType}</span>
+              <span>{formatPrice(selectedProperty.price)} руб.</span>
             </div>
-            <h3>{selectedProduct.title}</h3>
-            <p>{selectedProduct.description}</p>
+            <h3>{selectedProperty.title}</h3>
+            <p>{selectedProperty.address}</p>
+            <p>{selectedProperty.description}</p>
             <dl>
               <div>
                 <dt>ID</dt>
-                <dd>{selectedProduct.id}</dd>
+                <dd>{selectedProperty.id}</dd>
               </div>
               <div>
-                <dt>Автор</dt>
-                <dd>{selectedProduct.ownerUsername}</dd>
+                <dt>Риелтор</dt>
+                <dd>{selectedProperty.agentUsername}</dd>
               </div>
               <div>
-                <dt>Изменен</dt>
-                <dd>{new Date(selectedProduct.updatedAt).toLocaleString("ru-RU")}</dd>
+                <dt>Площадь</dt>
+                <dd>{selectedProperty.area} м²</dd>
               </div>
             </dl>
           </div>
         ) : (
-          <p className="empty">Выберите товар, чтобы посмотреть подробную информацию.</p>
+          <p className="empty">Выберите объект, чтобы посмотреть подробную информацию.</p>
         )}
       </section>
 
@@ -751,8 +793,8 @@ export default function App() {
                       }))
                     }
                   >
-                    <option value="user">Пользователь</option>
-                    <option value="seller">Продавец</option>
+                    <option value="user">Покупатель</option>
+                    <option value="seller">Риелтор</option>
                     <option value="admin">Администратор</option>
                   </select>
                 </label>

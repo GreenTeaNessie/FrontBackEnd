@@ -42,45 +42,49 @@ Authorization: Bearer REPLACE_WITH_ACCESS
 
 ###
 
-### List products
-GET http://localhost:3000/api/products
+### List properties
+GET http://localhost:3000/api/properties
 
 ###
 
-### Create product
-POST http://localhost:3000/api/products
+### Create property
+POST http://localhost:3000/api/properties
 Content-Type: application/json
 Authorization: Bearer REPLACE_WITH_ACCESS
 
 {
-  "title": "Монитор 27",
-  "category": "Электроника",
-  "description": "IPS-монитор для учебы и работы.",
-  "price": 18990
+  "title": "Евродвушка с видом на парк",
+  "propertyType": "Квартира",
+  "address": "Санкт-Петербург, пр. Маршала Блюхера, 21",
+  "description": "Современная квартира в новом доме рядом с парком и метро.",
+  "price": 10400000,
+  "area": 47
 }
 
 ###
 
-### Product by id
-GET http://localhost:3000/api/products/REPLACE_WITH_ID
+### Property by id
+GET http://localhost:3000/api/properties/REPLACE_WITH_ID
 Authorization: Bearer REPLACE_WITH_ACCESS
 
 ###
 
-### Update product
-PUT http://localhost:3000/api/products/REPLACE_WITH_ID
+### Update property
+PUT http://localhost:3000/api/properties/REPLACE_WITH_ID
 Content-Type: application/json
 Authorization: Bearer REPLACE_WITH_ACCESS
 
 {
-  "title": "Монитор 27 Pro",
-  "category": "Электроника",
-  "description": "Обновленная модель с USB-C.",
-  "price": 24990
+  "title": "Евродвушка с отделкой и видом на парк",
+  "propertyType": "Квартира",
+  "address": "Санкт-Петербург, пр. Маршала Блюхера, 21",
+  "description": "Квартира с готовой отделкой, кухней-гостиной и застекленной лоджией.",
+  "price": 11200000,
+  "area": 47
 }
 
 ###
 
-### Delete product
-DELETE http://localhost:3000/api/products/REPLACE_WITH_ID
+### Delete property
+DELETE http://localhost:3000/api/properties/REPLACE_WITH_ID
 Authorization: Bearer REPLACE_WITH_ACCESS

@@ -34,29 +34,33 @@ function createUser(username, password, role) {
 
 const users = [
   createUser("admin", "admin123", "admin"),
-  createUser("seller", "seller123", "seller"),
-  createUser("user", "user123", "user")
+  createUser("realtor", "realtor123", "seller"),
+  createUser("buyer", "buyer123", "user")
 ];
 
 const refreshTokens = new Map();
-const products = [
+const properties = [
   {
     id: nanoid(8),
-    title: "Механическая клавиатура",
-    category: "Периферия",
-    description: "Полноразмерная клавиатура для работы и игр.",
-    price: 7990,
-    ownerId: users[1].id,
+    title: "Семейная трехкомнатная квартира",
+    propertyType: "Квартира",
+    address: "Москва, ул. Архитектора Щусева, 5к2",
+    description: "Просторная квартира в современном ЖК, рядом школа, парк и метро.",
+    price: 24300000,
+    area: 86,
+    agentId: users[1].id,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
   {
     id: nanoid(8),
-    title: "Планшет для заметок",
-    category: "Электроника",
-    description: "Компактный планшет для учебы, чтения и заметок.",
-    price: 23990,
-    ownerId: users[0].id,
+    title: "Дом у леса с террасой",
+    propertyType: "Дом",
+    address: "Московская область, Истра, Сосновая, 11",
+    description: "Дом для круглогодичного проживания с участком, террасой и баней.",
+    price: 31900000,
+    area: 164,
+    agentId: users[0].id,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   }
@@ -72,12 +76,12 @@ function sanitizeUser(user) {
   };
 }
 
-function enrichProduct(product) {
-  const owner = users.find((user) => user.id === product.ownerId);
+function enrichProperty(property) {
+  const agent = users.find((user) => user.id === property.agentId);
 
   return {
-    ...product,
-    ownerUsername: owner ? owner.username : "unknown"
+    ...property,
+    agentUsername: agent ? agent.username : "agency-admin"
   };
 }
 
@@ -86,26 +90,34 @@ function normalizeRole(value) {
   return ALLOWED_ROLES.includes(role) ? role : "";
 }
 
-function normalizeProductPayload(payload) {
+function normalizePropertyPayload(payload) {
   const title = String(payload.title || "").trim();
-  const category = String(payload.category || "").trim();
+  const propertyType = String(payload.propertyType || "").trim();
+  const address = String(payload.address || "").trim();
   const description = String(payload.description || "").trim();
   const price = Number(payload.price);
+  const area = Number(payload.area);
 
-  if (!title || !category || !description) {
-    return { error: "title, category and description are required" };
+  if (!title || !propertyType || !address || !description) {
+    return { error: "title, propertyType, address and description are required" };
   }
 
   if (!Number.isFinite(price) || price <= 0) {
     return { error: "price must be a positive number" };
   }
 
+  if (!Number.isFinite(area) || area <= 0) {
+    return { error: "area must be a positive number" };
+  }
+
   return {
     value: {
       title,
-      category,
+      propertyType,
+      address,
       description,
-      price
+      price,
+      area
     }
   };
 }
@@ -451,20 +463,20 @@ app.delete("/api/users/:id", authMiddleware, roleMiddleware(["admin"]), (req, re
 });
 
 app.get(
-  "/api/products",
+  "/api/properties",
   authMiddleware,
   roleMiddleware(["user", "seller", "admin"]),
   (req, res) => {
-    return res.json(products.map(enrichProduct));
+    return res.json(properties.map(enrichProperty));
   }
 );
 
 app.post(
-  "/api/products",
+  "/api/properties",
   authMiddleware,
   roleMiddleware(["seller", "admin"]),
   (req, res) => {
-    const normalized = normalizeProductPayload(req.body || {});
+    const normalized = normalizePropertyPayload(req.body || {});
 
     if (normalized.error) {
       return res.status(400).json({
@@ -472,51 +484,51 @@ app.post(
       });
     }
 
-    const product = {
+    const property = {
       id: nanoid(8),
       ...normalized.value,
-      ownerId: req.user.id,
+      agentId: req.user.id,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
-    products.unshift(product);
+    properties.unshift(property);
 
-    return res.status(201).json(enrichProduct(product));
+    return res.status(201).json(enrichProperty(property));
   }
 );
 
 app.get(
-  "/api/products/:id",
+  "/api/properties/:id",
   authMiddleware,
   roleMiddleware(["user", "seller", "admin"]),
   (req, res) => {
-    const product = products.find((item) => item.id === req.params.id);
+    const property = properties.find((item) => item.id === req.params.id);
 
-    if (!product) {
+    if (!property) {
       return res.status(404).json({
-        error: "Product not found"
+        error: "Property not found"
       });
     }
 
-    return res.json(enrichProduct(product));
+    return res.json(enrichProperty(property));
   }
 );
 
 app.put(
-  "/api/products/:id",
+  "/api/properties/:id",
   authMiddleware,
   roleMiddleware(["seller", "admin"]),
   (req, res) => {
-    const product = products.find((item) => item.id === req.params.id);
+    const property = properties.find((item) => item.id === req.params.id);
 
-    if (!product) {
+    if (!property) {
       return res.status(404).json({
-        error: "Product not found"
+        error: "Property not found"
       });
     }
 
-    const normalized = normalizeProductPayload(req.body || {});
+    const normalized = normalizePropertyPayload(req.body || {});
 
     if (normalized.error) {
       return res.status(400).json({
@@ -524,30 +536,32 @@ app.put(
       });
     }
 
-    product.title = normalized.value.title;
-    product.category = normalized.value.category;
-    product.description = normalized.value.description;
-    product.price = normalized.value.price;
-    product.updatedAt = new Date().toISOString();
+    property.title = normalized.value.title;
+    property.propertyType = normalized.value.propertyType;
+    property.address = normalized.value.address;
+    property.description = normalized.value.description;
+    property.price = normalized.value.price;
+    property.area = normalized.value.area;
+    property.updatedAt = new Date().toISOString();
 
-    return res.json(enrichProduct(product));
+    return res.json(enrichProperty(property));
   }
 );
 
 app.delete(
-  "/api/products/:id",
+  "/api/properties/:id",
   authMiddleware,
   roleMiddleware(["admin"]),
   (req, res) => {
-    const index = products.findIndex((item) => item.id === req.params.id);
+    const index = properties.findIndex((item) => item.id === req.params.id);
 
     if (index === -1) {
       return res.status(404).json({
-        error: "Product not found"
+        error: "Property not found"
       });
     }
 
-    products.splice(index, 1);
+    properties.splice(index, 1);
 
     return res.status(204).send();
   }
@@ -568,5 +582,5 @@ app.use((error, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`Practice 11-12 backend started on http://localhost:${PORT}`);
-  console.log("Demo users: admin/admin123, seller/seller123, user/user123");
+  console.log("Demo users: admin/admin123, realtor/realtor123, buyer/buyer123");
 });

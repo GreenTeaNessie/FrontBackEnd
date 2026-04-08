@@ -7,11 +7,13 @@ const emptyAuthForm = {
   password: ""
 };
 
-const emptyProductForm = {
+const emptyPropertyForm = {
   title: "",
-  category: "",
+  propertyType: "",
+  address: "",
   description: "",
-  price: ""
+  price: "",
+  area: ""
 };
 
 function formatPrice(value) {
@@ -25,9 +27,9 @@ function mapError(error, fallbackMessage) {
 export default function App() {
   const [mode, setMode] = useState("login");
   const [authForm, setAuthForm] = useState(emptyAuthForm);
-  const [productForm, setProductForm] = useState(emptyProductForm);
-  const [products, setProducts] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [propertyForm, setPropertyForm] = useState(emptyPropertyForm);
+  const [properties, setProperties] = useState([]);
+  const [selectedProperty, setSelectedProperty] = useState(null);
   const [formMode, setFormMode] = useState("create");
   const [currentUser, setCurrentUser] = useState(null);
   const [isBusy, setIsBusy] = useState(false);
@@ -37,9 +39,9 @@ export default function App() {
   useEffect(() => {
     const handleSessionExpired = () => {
       setCurrentUser(null);
-      setSelectedProduct(null);
+      setSelectedProperty(null);
       setFormMode("create");
-      setProductForm(emptyProductForm);
+      setPropertyForm(emptyPropertyForm);
       setErrorMessage("Сессия истекла. Войдите заново.");
     };
 
@@ -59,7 +61,7 @@ export default function App() {
     setErrorMessage("");
 
     try {
-      await loadProducts();
+      await loadProperties();
 
       if (getAccessToken()) {
         const me = await api.getMe();
@@ -74,34 +76,34 @@ export default function App() {
     }
   }
 
-  async function loadProducts() {
-    const response = await api.getProducts();
-    setProducts(response);
+  async function loadProperties() {
+    const response = await api.getProperties();
+    setProperties(response);
 
-    if (selectedProduct) {
-      const freshSelected = response.find((product) => product.id === selectedProduct.id);
-      setSelectedProduct(freshSelected || null);
+    if (selectedProperty) {
+      const freshSelected = response.find((property) => property.id === selectedProperty.id);
+      setSelectedProperty(freshSelected || null);
     }
 
     return response;
   }
 
-  async function handleReloadProducts() {
+  async function handleReloadProperties() {
     setIsBusy(true);
     setErrorMessage("");
 
     try {
-      await loadProducts();
+      await loadProperties();
     } catch (error) {
-      setErrorMessage(mapError(error, "Не удалось обновить список товаров."));
+      setErrorMessage(mapError(error, "Не удалось обновить список объектов."));
     } finally {
       setIsBusy(false);
     }
   }
 
-  function resetProductForm() {
+  function resetPropertyForm() {
     setFormMode("create");
-    setProductForm(emptyProductForm);
+    setPropertyForm(emptyPropertyForm);
   }
 
   async function handleAuthSubmit(event) {
@@ -119,7 +121,7 @@ export default function App() {
       const response = await api.login(authForm);
       setCurrentUser(response.user);
       setAuthForm(emptyAuthForm);
-      await loadProducts();
+      await loadProperties();
       setInfoMessage(`Добро пожаловать, ${response.user.username}.`);
     } catch (error) {
       setErrorMessage(mapError(error, "Не удалось выполнить авторизацию."));
@@ -131,14 +133,14 @@ export default function App() {
   async function handleLogout() {
     clearTokens();
     setCurrentUser(null);
-    setSelectedProduct(null);
-    resetProductForm();
+    setSelectedProperty(null);
+    resetPropertyForm();
     setInfoMessage("Вы вышли из системы.");
     setErrorMessage("");
-    await loadProducts();
+    await loadProperties();
   }
 
-  async function handleSelectProduct(productId) {
+  async function handleSelectProperty(propertyId) {
     if (!currentUser) {
       setErrorMessage("Для просмотра детальной карточки нужно авторизоваться.");
       return;
@@ -149,33 +151,35 @@ export default function App() {
     setInfoMessage("");
 
     try {
-      const product = await api.getProductById(productId);
-      setSelectedProduct(product);
+      const property = await api.getPropertyById(propertyId);
+      setSelectedProperty(property);
       setFormMode("create");
     } catch (error) {
-      setErrorMessage(mapError(error, "Не удалось получить товар."));
+      setErrorMessage(mapError(error, "Не удалось получить объект недвижимости."));
     } finally {
       setIsBusy(false);
     }
   }
 
-  function handleEditSelectedProduct() {
-    if (!selectedProduct) {
+  function handleEditSelectedProperty() {
+    if (!selectedProperty) {
       return;
     }
 
     setFormMode("edit");
-    setProductForm({
-      title: selectedProduct.title,
-      category: selectedProduct.category,
-      description: selectedProduct.description,
-      price: String(selectedProduct.price)
+    setPropertyForm({
+      title: selectedProperty.title,
+      propertyType: selectedProperty.propertyType,
+      address: selectedProperty.address,
+      description: selectedProperty.description,
+      price: String(selectedProperty.price),
+      area: String(selectedProperty.area)
     });
-    setInfoMessage("Форма заполнена данными выбранного товара.");
+    setInfoMessage("Форма заполнена данными выбранного объявления.");
     setErrorMessage("");
   }
 
-  async function handleProductSubmit(event) {
+  async function handlePropertySubmit(event) {
     event.preventDefault();
 
     if (!currentUser) {
@@ -188,27 +192,27 @@ export default function App() {
     setInfoMessage("");
 
     try {
-      if (formMode === "edit" && selectedProduct) {
-        const updatedProduct = await api.updateProduct(selectedProduct.id, productForm);
-        setSelectedProduct(updatedProduct);
-        setInfoMessage("Товар успешно обновлен.");
+      if (formMode === "edit" && selectedProperty) {
+        const updatedProperty = await api.updateProperty(selectedProperty.id, propertyForm);
+        setSelectedProperty(updatedProperty);
+        setInfoMessage("Объявление успешно обновлено.");
       } else {
-        const createdProduct = await api.createProduct(productForm);
-        setSelectedProduct(createdProduct);
-        setInfoMessage("Товар успешно создан.");
+        const createdProperty = await api.createProperty(propertyForm);
+        setSelectedProperty(createdProperty);
+        setInfoMessage("Объявление успешно создано.");
       }
 
-      resetProductForm();
-      await loadProducts();
+      resetPropertyForm();
+      await loadProperties();
     } catch (error) {
-      setErrorMessage(mapError(error, "Не удалось сохранить товар."));
+      setErrorMessage(mapError(error, "Не удалось сохранить объявление."));
     } finally {
       setIsBusy(false);
     }
   }
 
-  async function handleDeleteSelectedProduct() {
-    if (!currentUser || !selectedProduct) {
+  async function handleDeleteSelectedProperty() {
+    if (!currentUser || !selectedProperty) {
       return;
     }
 
@@ -217,13 +221,13 @@ export default function App() {
     setInfoMessage("");
 
     try {
-      await api.deleteProduct(selectedProduct.id);
-      setSelectedProduct(null);
-      resetProductForm();
-      await loadProducts();
-      setInfoMessage("Товар удален.");
+      await api.deleteProperty(selectedProperty.id);
+      setSelectedProperty(null);
+      resetPropertyForm();
+      await loadProperties();
+      setInfoMessage("Объявление удалено.");
     } catch (error) {
-      setErrorMessage(mapError(error, "Не удалось удалить товар."));
+      setErrorMessage(mapError(error, "Не удалось удалить объявление."));
     } finally {
       setIsBusy(false);
     }
@@ -234,10 +238,10 @@ export default function App() {
       <header className="hero">
         <div>
           <p className="eyebrow">Практика 9-10</p>
-          <h1>React-клиент для JWT-авторизации и CRUD товаров</h1>
+          <h1>React-клиент для JWT-авторизации и каталога недвижимости</h1>
           <p className="hero-text">
-            Интерфейс работает с access token и refresh token, умеет
-            автоматически обновлять сессию и управлять товарами после входа.
+            Интерфейс работает с access token и refresh token, автоматически
+            обновляет сессию и позволяет управлять объявлениями о недвижимости после входа.
           </p>
         </div>
 
@@ -320,74 +324,89 @@ export default function App() {
           </form>
 
           <div className="note">
-            После входа форма товаров станет доступной, а детальная карточка
+            После входа форма объявлений станет доступной, а детальная карточка объекта
             будет загружаться через защищенный маршрут.
           </div>
         </section>
 
         <section className="panel">
           <div className="panel-header">
-            <h2>Товары</h2>
-            <button className="ghost-button" type="button" onClick={handleReloadProducts}>
+            <h2>Объекты недвижимости</h2>
+            <button className="ghost-button" type="button" onClick={handleReloadProperties}>
               Обновить список
             </button>
           </div>
 
           <div className="products-list">
-            {products.map((product) => (
+            {properties.map((property) => (
               <button
-                key={product.id}
+                key={property.id}
                 className={`product-card ${
-                  selectedProduct?.id === product.id ? "selected" : ""
+                  selectedProperty?.id === property.id ? "selected" : ""
                 }`}
-                onClick={() => handleSelectProduct(product.id)}
+                onClick={() => handleSelectProperty(property.id)}
                 type="button"
               >
-                <span className="product-category">{product.category}</span>
-                <strong>{product.title}</strong>
-                <span>{formatPrice(product.price)} руб.</span>
-                <small>Автор: {product.ownerUsername}</small>
+                <span className="product-category">{property.propertyType}</span>
+                <strong>{property.title}</strong>
+                <span>{property.address}</span>
+                <span>{formatPrice(property.price)} руб.</span>
+                <small>Площадь: {property.area} м²</small>
               </button>
             ))}
 
-            {!products.length ? <p className="empty">Список товаров пуст.</p> : null}
+            {!properties.length ? <p className="empty">Список объявлений пуст.</p> : null}
           </div>
         </section>
 
         <section className="panel">
           <div className="panel-header">
-            <h2>{formMode === "edit" ? "Редактирование" : "Новый товар"}</h2>
-            <button className="ghost-button" type="button" onClick={resetProductForm}>
+            <h2>{formMode === "edit" ? "Редактирование объявления" : "Новое объявление"}</h2>
+            <button className="ghost-button" type="button" onClick={resetPropertyForm}>
               Очистить форму
             </button>
           </div>
 
-          <form className="stack" onSubmit={handleProductSubmit}>
+          <form className="stack" onSubmit={handlePropertySubmit}>
             <label>
-              Название
+              Заголовок объявления
               <input
-                value={productForm.title}
+                value={propertyForm.title}
                 onChange={(event) =>
-                  setProductForm((current) => ({
+                  setPropertyForm((current) => ({
                     ...current,
                     title: event.target.value
                   }))
                 }
-                placeholder="Например, клавиатура"
+                placeholder="Студия рядом с метро"
                 required
               />
             </label>
             <label>
-              Категория
+              Тип объекта
               <input
-                value={productForm.category}
+                value={propertyForm.propertyType}
                 onChange={(event) =>
-                  setProductForm((current) => ({
+                  setPropertyForm((current) => ({
                     ...current,
-                    category: event.target.value
+                    propertyType: event.target.value
                   }))
                 }
-                placeholder="Периферия"
+                placeholder="Квартира"
+                required
+              />
+            </label>
+            <label>
+              Адрес
+              <input
+                value={propertyForm.address}
+                onChange={(event) =>
+                  setPropertyForm((current) => ({
+                    ...current,
+                    address: event.target.value
+                  }))
+                }
+                placeholder="Санкт-Петербург, ул. Примерная, 15"
                 required
               />
             </label>
@@ -395,57 +414,73 @@ export default function App() {
               Описание
               <textarea
                 rows="4"
-                value={productForm.description}
+                value={propertyForm.description}
                 onChange={(event) =>
-                  setProductForm((current) => ({
+                  setPropertyForm((current) => ({
                     ...current,
                     description: event.target.value
                   }))
                 }
-                placeholder="Кратко опишите товар"
+                placeholder="Опишите состояние, район и преимущества объекта"
                 required
               />
             </label>
             <label>
-              Цена
+              Стоимость
               <input
                 type="number"
                 min="1"
-                value={productForm.price}
+                value={propertyForm.price}
                 onChange={(event) =>
-                  setProductForm((current) => ({
+                  setPropertyForm((current) => ({
                     ...current,
                     price: event.target.value
                   }))
                 }
-                placeholder="9990"
+                placeholder="6500000"
+                required
+              />
+            </label>
+            <label>
+              Площадь, м²
+              <input
+                type="number"
+                min="1"
+                value={propertyForm.area}
+                onChange={(event) =>
+                  setPropertyForm((current) => ({
+                    ...current,
+                    area: event.target.value
+                  }))
+                }
+                placeholder="42"
                 required
               />
             </label>
 
             <button className="primary-button" type="submit" disabled={isBusy || !currentUser}>
-              {formMode === "edit" ? "Сохранить изменения" : "Создать товар"}
+              {formMode === "edit" ? "Сохранить изменения" : "Создать объявление"}
             </button>
           </form>
 
           {!currentUser ? (
-            <p className="empty">Авторизуйтесь, чтобы создавать и редактировать товары.</p>
+            <p className="empty">Авторизуйтесь, чтобы создавать и редактировать объявления.</p>
           ) : null}
         </section>
       </main>
 
       <section className="panel details-panel">
         <div className="panel-header">
-          <h2>Детальная карточка</h2>
-          {selectedProduct ? (
+          <h2>Карточка объекта</h2>
+          {selectedProperty ? (
             <div className="inline-actions">
-              <button className="ghost-button" type="button" onClick={handleEditSelectedProduct}>
+              <button className="ghost-button" type="button" onClick={handleEditSelectedProperty}>
                 Заполнить форму для редактирования
               </button>
               <button
                 className="danger-button"
                 type="button"
-                onClick={handleDeleteSelectedProduct}
+                onClick={handleDeleteSelectedProperty}
                 disabled={!currentUser || isBusy}
               >
                 Удалить
@@ -454,33 +489,34 @@ export default function App() {
           ) : null}
         </div>
 
-        {selectedProduct ? (
+        {selectedProperty ? (
           <div className="details-card">
             <div className="details-meta">
-              <span>{selectedProduct.category}</span>
-              <span>{formatPrice(selectedProduct.price)} руб.</span>
+              <span>{selectedProperty.propertyType}</span>
+              <span>{formatPrice(selectedProperty.price)} руб.</span>
             </div>
-            <h3>{selectedProduct.title}</h3>
-            <p>{selectedProduct.description}</p>
+            <h3>{selectedProperty.title}</h3>
+            <p>{selectedProperty.address}</p>
+            <p>{selectedProperty.description}</p>
             <dl>
               <div>
                 <dt>ID</dt>
-                <dd>{selectedProduct.id}</dd>
+                <dd>{selectedProperty.id}</dd>
               </div>
               <div>
-                <dt>Автор</dt>
-                <dd>{selectedProduct.ownerUsername}</dd>
+                <dt>Риелтор</dt>
+                <dd>{selectedProperty.agentUsername}</dd>
               </div>
               <div>
-                <dt>Обновлен</dt>
-                <dd>{new Date(selectedProduct.updatedAt).toLocaleString("ru-RU")}</dd>
+                <dt>Площадь</dt>
+                <dd>{selectedProperty.area} м²</dd>
               </div>
             </dl>
           </div>
         ) : (
           <p className="empty">
-            Выберите товар из списка. Детальный просмотр доступен через
-            защищенный маршрут и требует авторизации.
+            Выберите объект из списка. Детальный просмотр доступен через защищенный маршрут
+            и требует авторизации.
           </p>
         )}
       </section>

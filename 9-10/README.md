@@ -1,9 +1,9 @@
 # Практики 9-10
 
-Проект объединяет требования практических занятий 9 и 10:
+Проект объединяет требования практических занятий 9 и 10 в тематике недвижимости:
 
-- backend на Express.js с регистрацией, входом, JWT access token, refresh token и CRUD товаров;
-- frontend на React.js с формами входа и регистрации, списком товаров, детальной карточкой, созданием, обновлением и удалением товаров;
+- backend на Express.js с регистрацией, входом, JWT access token, refresh token и CRUD объявлений недвижимости;
+- frontend на React.js с формами входа и регистрации, списком объектов, детальной карточкой, созданием, обновлением и удалением объявлений;
 - автоматическое обновление access token через `axios` interceptors при ответе `401`.
 
 ## Структура
@@ -39,11 +39,20 @@ npm start
 - `POST /api/auth/login`
 - `POST /api/auth/refresh`
 - `GET /api/auth/me`
-- `GET /api/products`
-- `POST /api/products`
-- `GET /api/products/:id`
-- `PUT /api/products/:id`
-- `DELETE /api/products/:id`
+- `GET /api/properties`
+- `POST /api/properties`
+- `GET /api/properties/:id`
+- `PUT /api/properties/:id`
+- `DELETE /api/properties/:id`
+
+## Поля объявления
+
+- `title` - заголовок объявления
+- `propertyType` - тип объекта
+- `address` - адрес
+- `description` - описание
+- `price` - стоимость
+- `area` - площадь в квадратных метрах
 
 ## Проверка refresh token
 

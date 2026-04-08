@@ -22,24 +22,28 @@ app.use(express.json());
 
 const users = [];
 const refreshTokens = new Map();
-const products = [
+const properties = [
   {
     id: nanoid(8),
-    title: "Ноутбук для учебы",
-    category: "Электроника",
-    description: "Легкий ноутбук для учебы, заметок и видеозвонков.",
-    price: 54990,
-    ownerId: null,
+    title: "Студия с панорамными окнами",
+    propertyType: "Квартира",
+    address: "Санкт-Петербург, Мурино, ул. Шувалова, 14",
+    description: "Новая студия рядом с метро, подходит для жизни или сдачи в аренду.",
+    price: 5650000,
+    area: 28,
+    agentId: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
   {
     id: nanoid(8),
-    title: "Игровая мышь",
-    category: "Периферия",
-    description: "Мышь с настраиваемой подсветкой и дополнительными кнопками.",
-    price: 3990,
-    ownerId: null,
+    title: "Таунхаус с участком",
+    propertyType: "Дом",
+    address: "Ленинградская область, Всеволожск, Кленовая аллея, 7",
+    description: "Двухэтажный таунхаус с парковкой, террасой и небольшим садом.",
+    price: 16400000,
+    area: 118,
+    agentId: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   }
@@ -53,35 +57,43 @@ function sanitizeUser(user) {
   };
 }
 
-function enrichProduct(product) {
-  const owner = users.find((user) => user.id === product.ownerId);
+function enrichProperty(property) {
+  const agent = users.find((user) => user.id === property.agentId);
 
   return {
-    ...product,
-    ownerUsername: owner ? owner.username : "demo"
+    ...property,
+    agentUsername: agent ? agent.username : "agency-demo"
   };
 }
 
-function normalizeProductPayload(payload) {
+function normalizePropertyPayload(payload) {
   const title = String(payload.title || "").trim();
-  const category = String(payload.category || "").trim();
+  const propertyType = String(payload.propertyType || "").trim();
+  const address = String(payload.address || "").trim();
   const description = String(payload.description || "").trim();
   const price = Number(payload.price);
+  const area = Number(payload.area);
 
-  if (!title || !category || !description) {
-    return { error: "title, category and description are required" };
+  if (!title || !propertyType || !address || !description) {
+    return { error: "title, propertyType, address and description are required" };
   }
 
   if (!Number.isFinite(price) || price <= 0) {
     return { error: "price must be a positive number" };
   }
 
+  if (!Number.isFinite(area) || area <= 0) {
+    return { error: "area must be a positive number" };
+  }
+
   return {
     value: {
       title,
-      category,
+      propertyType,
+      address,
       description,
-      price
+      price,
+      area
     }
   };
 }
@@ -281,12 +293,12 @@ app.get("/api/auth/me", authMiddleware, (req, res) => {
   return res.json(sanitizeUser(req.user));
 });
 
-app.get("/api/products", (req, res) => {
-  return res.json(products.map(enrichProduct));
+app.get("/api/properties", (req, res) => {
+  return res.json(properties.map(enrichProperty));
 });
 
-app.post("/api/products", authMiddleware, (req, res) => {
-  const normalized = normalizeProductPayload(req.body || {});
+app.post("/api/properties", authMiddleware, (req, res) => {
+  const normalized = normalizePropertyPayload(req.body || {});
 
   if (normalized.error) {
     return res.status(400).json({
@@ -294,41 +306,41 @@ app.post("/api/products", authMiddleware, (req, res) => {
     });
   }
 
-  const product = {
+  const property = {
     id: nanoid(8),
     ...normalized.value,
-    ownerId: req.user.id,
+    agentId: req.user.id,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
 
-  products.unshift(product);
+  properties.unshift(property);
 
-  return res.status(201).json(enrichProduct(product));
+  return res.status(201).json(enrichProperty(property));
 });
 
-app.get("/api/products/:id", authMiddleware, (req, res) => {
-  const product = products.find((item) => item.id === req.params.id);
+app.get("/api/properties/:id", authMiddleware, (req, res) => {
+  const property = properties.find((item) => item.id === req.params.id);
 
-  if (!product) {
+  if (!property) {
     return res.status(404).json({
-      error: "Product not found"
+      error: "Property not found"
     });
   }
 
-  return res.json(enrichProduct(product));
+  return res.json(enrichProperty(property));
 });
 
-app.put("/api/products/:id", authMiddleware, (req, res) => {
-  const product = products.find((item) => item.id === req.params.id);
+app.put("/api/properties/:id", authMiddleware, (req, res) => {
+  const property = properties.find((item) => item.id === req.params.id);
 
-  if (!product) {
+  if (!property) {
     return res.status(404).json({
-      error: "Product not found"
+      error: "Property not found"
     });
   }
 
-  const normalized = normalizeProductPayload(req.body || {});
+  const normalized = normalizePropertyPayload(req.body || {});
 
   if (normalized.error) {
     return res.status(400).json({
@@ -336,25 +348,27 @@ app.put("/api/products/:id", authMiddleware, (req, res) => {
     });
   }
 
-  product.title = normalized.value.title;
-  product.category = normalized.value.category;
-  product.description = normalized.value.description;
-  product.price = normalized.value.price;
-  product.updatedAt = new Date().toISOString();
+  property.title = normalized.value.title;
+  property.propertyType = normalized.value.propertyType;
+  property.address = normalized.value.address;
+  property.description = normalized.value.description;
+  property.price = normalized.value.price;
+  property.area = normalized.value.area;
+  property.updatedAt = new Date().toISOString();
 
-  return res.json(enrichProduct(product));
+  return res.json(enrichProperty(property));
 });
 
-app.delete("/api/products/:id", authMiddleware, (req, res) => {
-  const index = products.findIndex((item) => item.id === req.params.id);
+app.delete("/api/properties/:id", authMiddleware, (req, res) => {
+  const index = properties.findIndex((item) => item.id === req.params.id);
 
   if (index === -1) {
     return res.status(404).json({
-      error: "Product not found"
+      error: "Property not found"
     });
   }
 
-  products.splice(index, 1);
+  properties.splice(index, 1);
 
   return res.status(204).send();
 });
