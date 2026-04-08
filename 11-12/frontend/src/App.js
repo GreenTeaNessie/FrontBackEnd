@@ -397,17 +397,16 @@ export default function App() {
     <div className="app-shell">
       <header className="hero">
         <div>
-          <p className="eyebrow">Практики 11-12</p>
-          <h1>RBAC-панель для недвижимости и пользователей</h1>
+          <p className="eyebrow">Платформа недвижимости</p>
+          <h1>EstateHub</h1>
           <p className="hero-text">
-            Один интерфейс для трех ролей: покупатель просматривает объекты,
-            риелтор публикует и редактирует объявления, администратор дополнительно
-            управляет пользователями и модерирует каталог.
+            Единая платформа для поиска, публикации и управления объектами недвижимости.
+            Покупайте, продавайте и управляйте каталогом в одном интерфейсе.
           </p>
           <div className="capsules">
-            <span>buyer: просмотр объектов</span>
-            <span>realtor: создание и редактирование</span>
-            <span>admin: объявления + пользователи</span>
+            <span>Поиск объектов</span>
+            <span>Публикация объявлений</span>
+            <span>Управление каталогом</span>
           </div>
         </div>
 
@@ -417,12 +416,6 @@ export default function App() {
               ? `${currentUser.username} · ${roleLabels[currentUser.role]}`
               : "Гость"}
           </span>
-          <p className="hint">
-            Бэкенд: <code>http://localhost:3002</code>
-          </p>
-          <p className="hint">
-            Фронтенд: <code>http://localhost:3003</code>
-          </p>
           {currentUser ? (
             <button className="secondary-button" onClick={handleLogout}>
               Выйти
@@ -512,7 +505,7 @@ export default function App() {
           </form>
 
           <div className="demo-list">
-            <h3>Готовые аккаунты</h3>
+            <h3>Быстрый вход</h3>
             {demoAccounts.map((account) => (
               <button
                 key={account.username}
@@ -521,7 +514,6 @@ export default function App() {
                 onClick={() => fillDemoCredentials(account)}
               >
                 <strong>{account.username}</strong>
-                <span>{account.password}</span>
                 <small>{roleLabels[account.role]}</small>
               </button>
             ))}
@@ -820,7 +812,7 @@ export default function App() {
                   disabled={isBusy || selectedManagedUser.id === currentUser.id}
                   onClick={handleBlockUser}
                 >
-                  Заблокировать через DELETE
+                  Заблокировать пользователя
                 </button>
               </form>
             ) : (
@@ -833,9 +825,7 @@ export default function App() {
       ) : null}
 
       <footer className="footer-note">
-        {isBusy
-          ? "Выполняется запрос..."
-          : "Проект готов для практик 11 и 12, включая README и сценарии RBAC."}
+        {isBusy ? "Выполняется запрос..." : "© 2025 EstateHub. Все права защищены."}
       </footer>
     </div>
   );
