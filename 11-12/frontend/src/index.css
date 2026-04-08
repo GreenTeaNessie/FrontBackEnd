@@ -10,10 +10,8 @@ body,
 
 body {
   margin: 0;
-  font-family: "Segoe UI", sans-serif;
-  background:
-    radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 28%),
-    linear-gradient(135deg, #eff6ff 0%, #f8fafc 45%, #e2e8f0 100%);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: #f1f5f9;
   color: #0f172a;
 }
 
