@@ -48,15 +48,15 @@
 ```
 11-12/
 ├── backend/
-│   ├── app.js          # Express-сервер: маршруты, middleware, логика
+│   ├── app.js          
 │   └── package.json
 └── frontend/
     ├── src/
-    │   ├── App.js          # Главный компонент, вся бизнес-логика UI
-    │   ├── App.css         # Стили: панели, карточки, формы, адаптив
-    │   ├── index.js        # Точка входа React
+    │   ├── App.js          
+    │   ├── App.css         
+    │   ├── index.js        
     │   └── api/
-    │       └── client.js   # Axios-клиент с interceptors для JWT
+    │       └── client.js   
     └── package.json
 ```
 
