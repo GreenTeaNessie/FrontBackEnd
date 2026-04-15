@@ -1,11 +1,33 @@
 const express = require("express");
 const cors = require("cors");
-const bcrypt = require("bcrypt");
+const crypto = require("crypto");
+const fs = require("fs");
+const path = require("path");
 const jwt = require("jsonwebtoken");
 const { nanoid } = require("nanoid");
 
 const app = express();
 const PORT = process.env.PORT || 3002;
+
+const PASSWORDS_FILE = path.join(__dirname, "passwords.json");
+
+function hashPassword(password) {
+  return crypto.createHash("sha256").update(password).digest("hex");
+}
+
+function loadPasswords() {
+  try {
+    return JSON.parse(fs.readFileSync(PASSWORDS_FILE, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+function savePasswords(store) {
+  fs.writeFileSync(PASSWORDS_FILE, JSON.stringify(store, null, 2), "utf8");
+}
+
+const passwords = loadPasswords();
 
 const ACCESS_SECRET = process.env.ACCESS_SECRET || "practice_11_12_access_secret";
 const REFRESH_SECRET = process.env.REFRESH_SECRET || "practice_11_12_refresh_secret";
@@ -22,10 +44,11 @@ app.use(
 app.use(express.json());
 
 function createUser(username, password, role) {
+  const id = nanoid(8);
+  passwords[username] = hashPassword(password);
   return {
-    id: nanoid(8),
+    id,
     username,
-    passwordHash: bcrypt.hashSync(password, 10),
     role,
     isBlocked: false,
     createdAt: new Date().toISOString()
@@ -37,6 +60,8 @@ const users = [
   createUser("realtor", "realtor123", "seller"),
   createUser("buyer", "buyer123", "user")
 ];
+
+savePasswords(passwords);
 
 const refreshTokens = new Map();
 const properties = [
@@ -95,6 +120,7 @@ function normalizePropertyPayload(payload) {
   const propertyType = String(payload.propertyType || "").trim();
   const address = String(payload.address || "").trim();
   const description = String(payload.description || "").trim();
+  const imageUrl = String(payload.imageUrl || "").trim();
   const price = Number(payload.price);
   const area = Number(payload.area);
 
@@ -116,6 +142,7 @@ function normalizePropertyPayload(payload) {
       propertyType,
       address,
       description,
+      imageUrl,
       price,
       area
     }
@@ -266,11 +293,12 @@ app.post("/api/auth/register", async (req, res) => {
     });
   }
 
-  const passwordHash = await bcrypt.hash(password, 10);
+  passwords[username] = hashPassword(password);
+  savePasswords(passwords);
+
   const user = {
     id: nanoid(8),
     username,
-    passwordHash,
     role,
     isBlocked: false,
     createdAt: new Date().toISOString()
@@ -281,7 +309,7 @@ app.post("/api/auth/register", async (req, res) => {
   return res.status(201).json(sanitizeUser(user));
 });
 
-app.post("/api/auth/login", async (req, res) => {
+app.post("/api/auth/login", (req, res) => {
   const username = String(req.body.username || "").trim();
   const password = String(req.body.password || "").trim();
 
@@ -304,7 +332,7 @@ app.post("/api/auth/login", async (req, res) => {
     });
   }
 
-  const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+  const isValidPassword = hashPassword(password) === passwords[user.username];
   if (!isValidPassword) {
     return res.status(401).json({
       error: "Invalid credentials"
@@ -540,6 +568,7 @@ app.put(
     property.propertyType = normalized.value.propertyType;
     property.address = normalized.value.address;
     property.description = normalized.value.description;
+    property.imageUrl = normalized.value.imageUrl;
     property.price = normalized.value.price;
     property.area = normalized.value.area;
     property.updatedAt = new Date().toISOString();

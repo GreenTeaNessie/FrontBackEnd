@@ -284,28 +284,44 @@
 /* ─── Property list cards ────────────────────────────────────── */
 .prop-card {
   width: 100%;
-  display: grid;
-  gap: 3px;
-  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: transparent;
+  background: var(--surface);
   cursor: pointer;
   text-align: left;
   font: inherit;
   color: var(--text);
   transition: all .15s;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  overflow: hidden;
 }
 
 .prop-card:hover {
-  background: var(--bg);
   border-color: #cbd5e1;
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
 }
 
 .prop-card.selected {
   background: var(--primary-light);
   border-color: var(--primary);
+}
+
+.prop-thumb {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  display: block;
+  background: var(--bg);
+}
+
+.prop-info {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
 }
 
 .prop-card .prop-type {
@@ -340,6 +356,17 @@
 .prop-card .prop-area {
   font-size: 0.78rem;
   color: var(--muted);
+}
+
+/* ─── Details hero image ─────────────────────────────────────── */
+.details-hero {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  margin-bottom: 20px;
+  display: block;
+  background: var(--bg);
 }
 
 /* ─── Main content area ──────────────────────────────────────── */

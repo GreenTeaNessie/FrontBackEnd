@@ -3,7 +3,7 @@ import "./App.css";
 import { api, clearTokens, getAccessToken } from "./api/client";
 
 const emptyAuthForm = { username: "", password: "", role: "user" };
-const emptyPropertyForm = { title: "", propertyType: "", address: "", description: "", price: "", area: "" };
+const emptyPropertyForm = { title: "", propertyType: "", address: "", description: "", imageUrl: "", price: "", area: "" };
 const emptyUserForm = { username: "", role: "user", isBlocked: false };
 
 const roleLabels = { user: "Покупатель", seller: "Риелтор", admin: "Администратор" };
@@ -15,6 +15,51 @@ const demoAccounts = [
 
 function formatPrice(v) { return new Intl.NumberFormat("ru-RU").format(v) + " ₽"; }
 function mapError(e, fb) { return e.response?.data?.error || fb; }
+
+const IMAGES_BY_TYPE = {
+  // Квартиры — интерьеры, виды из окон, жилые комплексы
+  квартира: [
+    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=500&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&h=500&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=500&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&h=500&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&h=500&fit=crop&auto=format",
+  ],
+  // Дома — фасады, коттеджи, загородные дома
+  дом: [
+    "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&h=500&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=500&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&h=500&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=500&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=500&fit=crop&auto=format",
+  ],
+  // Кухни / студии
+  студия: [
+    "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&h=500&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=500&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=500&fit=crop&auto=format",
+  ],
+  // Коммерческая / офис
+  офис: [
+    "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=500&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=800&h=500&fit=crop&auto=format",
+  ],
+  // Запасной пул — если тип не совпал
+  default: [
+    "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&h=500&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&h=500&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=500&fit=crop&auto=format",
+    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=500&fit=crop&auto=format",
+  ],
+};
+
+function getPropertyImage(p) {
+  if (p.imageUrl) return p.imageUrl;
+  const key = (p.propertyType || "").toLowerCase().trim();
+  const pool = IMAGES_BY_TYPE[key] || IMAGES_BY_TYPE.default;
+  const hash = p.id.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return pool[hash % pool.length];
+}
 
 export default function App() {
   const [mode, setMode] = useState("login");
@@ -69,6 +114,7 @@ export default function App() {
       if (fresh && propertyFormMode === "edit") {
         setPropertyForm({ title: fresh.title, propertyType: fresh.propertyType,
           address: fresh.address, description: fresh.description,
+          imageUrl: fresh.imageUrl || "",
           price: String(fresh.price), area: String(fresh.area) });
       }
     }
@@ -125,6 +171,7 @@ export default function App() {
     setPropertyFormMode("edit");
     setPropertyForm({ title: selectedProperty.title, propertyType: selectedProperty.propertyType,
       address: selectedProperty.address, description: selectedProperty.description,
+      imageUrl: selectedProperty.imageUrl || "",
       price: String(selectedProperty.price), area: String(selectedProperty.area) });
     setErrorMessage("");
   }
@@ -308,12 +355,15 @@ export default function App() {
                       onClick={() => handleSelectProperty(p.id)}
                       type="button"
                     >
-                      <span className="prop-type">{p.propertyType}</span>
-                      <strong>{p.title}</strong>
-                      <span className="prop-addr">{p.address}</span>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span className="prop-price">{formatPrice(p.price)}</span>
-                        <span className="prop-area">{p.area} м²</span>
+                      <img className="prop-thumb" src={getPropertyImage(p)} alt={p.title} />
+                      <div className="prop-info">
+                        <span className="prop-type">{p.propertyType}</span>
+                        <strong>{p.title}</strong>
+                        <span className="prop-addr">{p.address}</span>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span className="prop-price">{formatPrice(p.price)}</span>
+                          <span className="prop-area">{p.area} м²</span>
+                        </div>
                       </div>
                     </button>
                   ))
@@ -326,6 +376,11 @@ export default function App() {
               {/* Property details */}
               {selectedProperty ? (
                 <div className="panel">
+                  <img
+                    className="details-hero"
+                    src={getPropertyImage(selectedProperty)}
+                    alt={selectedProperty.title}
+                  />
                   <div className="details-header">
                     <div style={{ flex: 1 }}>
                       <span className="details-type">{selectedProperty.propertyType}</span>
@@ -383,6 +438,10 @@ export default function App() {
                       <div className="field full-width">
                         <label>Заголовок объявления</label>
                         <input value={propertyForm.title} onChange={pf("title")} placeholder="2-к квартира у метро" required />
+                      </div>
+                      <div className="field full-width">
+                        <label>Фото объекта (URL, необязательно)</label>
+                        <input value={propertyForm.imageUrl} onChange={pf("imageUrl")} placeholder="https://..." />
                       </div>
                       <div className="field">
                         <label>Тип объекта</label>
