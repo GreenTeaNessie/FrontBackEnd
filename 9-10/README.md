@@ -1,15 +1,18 @@
 # Практики 9-10
 
-Проект объединяет требования практических занятий 9 и 10 в тематике недвижимости:
+Папка `9-10` приведена к единому заданию по интернет-магазину электроники.
 
-- backend на Express.js с регистрацией, входом, JWT access token, refresh token и CRUD объявлений недвижимости;
-- frontend на React.js с формами входа и регистрации, списком объектов, детальной карточкой, созданием, обновлением и удалением объявлений;
-- автоматическое обновление access token через `axios` interceptors при ответе `401`.
+## Что реализовано
+
+- `backend` на Express.js с регистрацией по `email`, логином, JWT access token и refresh token.
+- `backend` использует единый контракт товаров: `GET/POST /api/products`, `GET/PUT/DELETE /api/products/:id`.
+- `frontend` на React.js с формами регистрации и входа, каталогом товаров, просмотром карточки товара, созданием, редактированием и удалением.
+- В клиенте настроен `axios` interceptor для автоматического обновления access token через `POST /api/auth/refresh`.
 
 ## Структура
 
-- `backend` - API на Express.js
-- `frontend` - клиентское приложение на React.js
+- `backend` — API на Express.js.
+- `frontend` — клиентское приложение на React.js.
 
 ## Запуск
 
@@ -21,7 +24,7 @@ npm install
 npm start
 ```
 
-Сервер поднимается на `http://localhost:3000`.
+Сервер запускается на `http://localhost:3000`.
 
 ### Frontend
 
@@ -39,21 +42,40 @@ npm start
 - `POST /api/auth/login`
 - `POST /api/auth/refresh`
 - `GET /api/auth/me`
-- `GET /api/properties`
-- `POST /api/properties`
-- `GET /api/properties/:id`
-- `PUT /api/properties/:id`
-- `DELETE /api/properties/:id`
+- `GET /api/products`
+- `POST /api/products`
+- `GET /api/products/:id`
+- `PUT /api/products/:id`
+- `DELETE /api/products/:id`
 
-## Поля объявления
+## Модель пользователя
 
-- `title` - заголовок объявления
-- `propertyType` - тип объекта
-- `address` - адрес
-- `description` - описание
-- `price` - стоимость
-- `area` - площадь в квадратных метрах
+```json
+{
+  "email": "student@example.com",
+  "first_name": "Алексей",
+  "last_name": "Смирнов",
+  "password": "qwerty123"
+}
+```
+
+## Модель товара
+
+```json
+{
+  "title": "Игровой ноутбук Storm 16",
+  "category": "Ноутбуки",
+  "description": "Модель с видеокартой RTX и экраном 165 Гц.",
+  "price": 119990
+}
+```
 
 ## Проверка refresh token
 
-Маршрут `POST /api/auth/refresh` принимает refresh token из заголовка `x-refresh-token` и дополнительно поддерживает `refreshToken` в теле запроса.
+- Основной способ передачи refresh token: заголовок `x-refresh-token`.
+- Дополнительно backend принимает `refreshToken` в теле запроса для удобства ручной проверки.
+- Рекомендуемый сценарий проверки:
+  1. Выполнить `POST /api/auth/login`.
+  2. Вызвать защищенный маршрут с access token.
+  3. Выполнить `POST /api/auth/refresh`.
+  4. Повторить защищенный маршрут с новым access token.

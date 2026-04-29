@@ -1,74 +1,122 @@
-﻿const express = require('express');
+const express = require("express");
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
+let nextId = 4;
 let products = [
-  { id: 1, name: 'Студия, 29 м2, Мурино', cost: 5200000 },
-  { id: 2, name: '2-комнатная квартира, 68 м2, Теплый Стан', cost: 15400000 },
-  { id: 3, name: 'Дом, 140 м2, Подмосковье', cost: 21900000 }
+  { id: 1, title: "Ноутбук Vector 14", price: 94990 },
+  { id: 2, title: "Беспроводные наушники ArcSound X5", price: 12990 },
+  { id: 3, title: "Игровая мышь HyperClick Pro", price: 4990 }
 ];
 
-app.get('/',(req, res)=>{
-  res.send('Главная страница');
+function validateProductPayload(payload, { partial = false } = {}) {
+  const errors = [];
+  const data = {};
+
+  if (!partial || payload.title !== undefined) {
+    const title = String(payload.title ?? "").trim();
+    if (!title) {
+      errors.push("Поле title обязательно");
+    } else {
+      data.title = title;
+    }
+  }
+
+  if (!partial || payload.price !== undefined) {
+    const price = Number(payload.price);
+    if (!Number.isFinite(price) || price <= 0) {
+      errors.push("Поле price должно быть положительным числом");
+    } else {
+      data.price = price;
+    }
+  }
+
+  return {
+    errors,
+    data
+  };
+}
+
+function findProductById(id) {
+  return products.find((product) => product.id === Number(id));
+}
+
+app.get("/", (req, res) => {
+  res.json({
+    message: "API товаров для практического занятия №2",
+    routes: ["GET /products", "GET /products/:id", "POST /products", "PATCH /products/:id", "DELETE /products/:id"]
+  });
 });
 
-app.get('/products', (req, res) => {
+app.get("/products", (req, res) => {
   res.json(products);
 });
 
-app.get('/products/:id', (req, res) => {
-  const product = products.find((p) => p.id == req.params.id);
+app.get("/products/:id", (req, res) => {
+  const product = findProductById(req.params.id);
 
   if (!product) {
-    return res.status(404).send('Товар не найден');
+    return res.status(404).json({ error: "Товар не найден" });
   }
 
-  res.json(product);
+  return res.json(product);
 });
 
-app.post('/products', (req, res) => {
-  const { name, cost } = req.body;
+app.post("/products", (req, res) => {
+  const { errors, data } = validateProductPayload(req.body);
+
+  if (errors.length) {
+    return res.status(400).json({ errors });
+  }
 
   const newProduct = {
-    id: Date.now(),
-    name,
-    cost
+    id: nextId++,
+    ...data
   };
 
   products.push(newProduct);
-  res.status(201).json(newProduct);
+  return res.status(201).json(newProduct);
 });
 
-app.patch('/products/:id', (req, res) => {
-  const product = products.find((p) => p.id == req.params.id);
+app.patch("/products/:id", (req, res) => {
+  const product = findProductById(req.params.id);
 
   if (!product) {
-    return res.status(404).send('Товар не найден');
+    return res.status(404).json({ error: "Товар не найден" });
   }
 
-  const { name, cost } = req.body;
-
-  if (name !== undefined) {
-    product.name = name;
+  if (req.body.title === undefined && req.body.price === undefined) {
+    return res.status(400).json({
+      error: "Нечего обновлять: передайте title и/или price"
+    });
   }
 
-  if (cost !== undefined) {
-    product.cost = cost;
+  const { errors, data } = validateProductPayload(req.body, { partial: true });
+
+  if (errors.length) {
+    return res.status(400).json({ errors });
   }
 
-  res.json(product);
+  Object.assign(product, data);
+  return res.json(product);
 });
 
-app.delete('/products/:id', (req, res) => {
-  products = products.filter((p) => p.id != req.params.id);
-  res.send('Ok');
+app.delete("/products/:id", (req, res) => {
+  const product = findProductById(req.params.id);
+
+  if (!product) {
+    return res.status(404).json({ error: "Товар не найден" });
+  }
+
+  products = products.filter((item) => item.id !== product.id);
+  return res.status(204).send();
 });
 
 app.use((req, res) => {
-  res.redirect('/');
+  res.status(404).json({ error: "Маршрут не найден" });
 });
 
 app.listen(port, () => {

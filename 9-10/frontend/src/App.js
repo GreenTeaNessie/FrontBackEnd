@@ -3,21 +3,21 @@ import "./App.css";
 import { api, clearTokens, getAccessToken } from "./api/client";
 
 const emptyAuthForm = {
-  username: "",
+  email: "",
+  first_name: "",
+  last_name: "",
   password: ""
 };
 
-const emptyPropertyForm = {
+const emptyProductForm = {
   title: "",
-  propertyType: "",
-  address: "",
+  category: "",
   description: "",
-  price: "",
-  area: ""
+  price: ""
 };
 
 function formatPrice(value) {
-  return new Intl.NumberFormat("ru-RU").format(value);
+  return `${new Intl.NumberFormat("ru-RU").format(value)} ₽`;
 }
 
 function mapError(error, fallbackMessage) {
@@ -27,9 +27,9 @@ function mapError(error, fallbackMessage) {
 export default function App() {
   const [mode, setMode] = useState("login");
   const [authForm, setAuthForm] = useState(emptyAuthForm);
-  const [propertyForm, setPropertyForm] = useState(emptyPropertyForm);
-  const [properties, setProperties] = useState([]);
-  const [selectedProperty, setSelectedProperty] = useState(null);
+  const [productForm, setProductForm] = useState(emptyProductForm);
+  const [products, setProducts] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [formMode, setFormMode] = useState("create");
   const [currentUser, setCurrentUser] = useState(null);
   const [isBusy, setIsBusy] = useState(false);
@@ -39,10 +39,11 @@ export default function App() {
   useEffect(() => {
     const handleSessionExpired = () => {
       setCurrentUser(null);
-      setSelectedProperty(null);
+      setProducts([]);
+      setSelectedProduct(null);
       setFormMode("create");
-      setPropertyForm(emptyPropertyForm);
-      setErrorMessage("Сессия истекла. Войдите заново.");
+      setProductForm(emptyProductForm);
+      setErrorMessage("Сессия истекла. Выполните вход снова.");
     };
 
     window.addEventListener("auth:expired", handleSessionExpired);
@@ -57,16 +58,17 @@ export default function App() {
   }, []);
 
   async function bootstrap() {
+    if (!getAccessToken()) {
+      return;
+    }
+
     setIsBusy(true);
     setErrorMessage("");
 
     try {
-      await loadProperties();
-
-      if (getAccessToken()) {
-        const me = await api.getMe();
-        setCurrentUser(me);
-      }
+      const me = await api.getMe();
+      setCurrentUser(me);
+      await loadProducts();
     } catch (error) {
       clearTokens();
       setCurrentUser(null);
@@ -76,34 +78,59 @@ export default function App() {
     }
   }
 
-  async function loadProperties() {
-    const response = await api.getProperties();
-    setProperties(response);
+  async function loadProducts(preferredId) {
+    const response = await api.getProducts();
+    setProducts(response);
 
-    if (selectedProperty) {
-      const freshSelected = response.find((property) => property.id === selectedProperty.id);
-      setSelectedProperty(freshSelected || null);
+    if (response.length === 0) {
+      setSelectedProduct(null);
+      return response;
+    }
+
+    const targetId = preferredId || selectedProduct?.id || response[0].id;
+
+    try {
+      const freshSelected = await api.getProductById(targetId);
+      setSelectedProduct(freshSelected);
+    } catch (error) {
+      const fallbackProduct = response.find((item) => item.id === targetId) || response[0];
+      setSelectedProduct(fallbackProduct);
     }
 
     return response;
   }
 
-  async function handleReloadProperties() {
+  async function handleSelectProduct(id) {
     setIsBusy(true);
     setErrorMessage("");
 
     try {
-      await loadProperties();
+      const product = await api.getProductById(id);
+      setSelectedProduct(product);
     } catch (error) {
-      setErrorMessage(mapError(error, "Не удалось обновить список объектов."));
+      setErrorMessage(mapError(error, "Не удалось загрузить карточку товара."));
     } finally {
       setIsBusy(false);
     }
   }
 
-  function resetPropertyForm() {
+  function resetProductForm() {
     setFormMode("create");
-    setPropertyForm(emptyPropertyForm);
+    setProductForm(emptyProductForm);
+  }
+
+  function startEditingProduct() {
+    if (!selectedProduct) {
+      return;
+    }
+
+    setFormMode("edit");
+    setProductForm({
+      title: selectedProduct.title,
+      category: selectedProduct.category,
+      description: selectedProduct.description,
+      price: String(selectedProduct.price)
+    });
   }
 
   async function handleAuthSubmit(event) {
@@ -114,162 +141,146 @@ export default function App() {
 
     try {
       if (mode === "register") {
-        await api.register(authForm);
-        setInfoMessage("Регистрация успешна. Выполняю вход автоматически.");
+        await api.register({
+          email: authForm.email,
+          first_name: authForm.first_name,
+          last_name: authForm.last_name,
+          password: authForm.password
+        });
+        setInfoMessage("Регистрация выполнена. Вход выполнен автоматически.");
       }
 
-      const response = await api.login(authForm);
-      setCurrentUser(response.user);
+      await api.login({
+        email: authForm.email,
+        password: authForm.password
+      });
+
+      const me = await api.getMe();
+      setCurrentUser(me);
       setAuthForm(emptyAuthForm);
-      await loadProperties();
-      setInfoMessage(`Добро пожаловать, ${response.user.username}.`);
+      await loadProducts();
     } catch (error) {
-      setErrorMessage(mapError(error, "Не удалось выполнить авторизацию."));
+      setErrorMessage(mapError(error, "Не удалось выполнить вход."));
     } finally {
       setIsBusy(false);
     }
   }
 
-  async function handleLogout() {
+  async function handleReloadProducts() {
+    setIsBusy(true);
+    setErrorMessage("");
+
+    try {
+      await loadProducts();
+    } catch (error) {
+      setErrorMessage(mapError(error, "Не удалось обновить каталог."));
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  async function handleProductSubmit(event) {
+    event.preventDefault();
+    setIsBusy(true);
+    setErrorMessage("");
+    setInfoMessage("");
+
+    const payload = {
+      title: productForm.title.trim(),
+      category: productForm.category.trim(),
+      description: productForm.description.trim(),
+      price: Number(productForm.price)
+    };
+
+    if (!payload.title || !payload.category || !payload.description) {
+      setErrorMessage("Заполните название товара, категорию и описание.");
+      setIsBusy(false);
+      return;
+    }
+
+    if (!Number.isFinite(payload.price) || payload.price <= 0) {
+      setErrorMessage("Введите корректную цену.");
+      setIsBusy(false);
+      return;
+    }
+
+    try {
+      let savedProduct;
+
+      if (formMode === "edit" && selectedProduct) {
+        savedProduct = await api.updateProduct(selectedProduct.id, payload);
+        setInfoMessage("Товар обновлен.");
+      } else {
+        savedProduct = await api.createProduct(payload);
+        setInfoMessage("Товар создан.");
+      }
+
+      resetProductForm();
+      await loadProducts(savedProduct.id);
+    } catch (error) {
+      setErrorMessage(mapError(error, "Не удалось сохранить товар."));
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  async function handleDeleteSelected() {
+    if (!selectedProduct) {
+      return;
+    }
+
+    const confirmed = window.confirm(`Удалить товар "${selectedProduct.title}"?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsBusy(true);
+    setErrorMessage("");
+    setInfoMessage("");
+
+    try {
+      await api.deleteProduct(selectedProduct.id);
+      setInfoMessage("Товар удален.");
+      resetProductForm();
+      await loadProducts();
+    } catch (error) {
+      setErrorMessage(mapError(error, "Не удалось удалить товар."));
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  function handleLogout() {
     clearTokens();
     setCurrentUser(null);
-    setSelectedProperty(null);
-    resetPropertyForm();
+    setProducts([]);
+    setSelectedProduct(null);
+    setAuthForm(emptyAuthForm);
+    resetProductForm();
     setInfoMessage("Вы вышли из системы.");
     setErrorMessage("");
-    await loadProperties();
   }
 
-  async function handleSelectProperty(propertyId) {
-    if (!currentUser) {
-      setErrorMessage("Для просмотра детальной карточки нужно авторизоваться.");
-      return;
-    }
+  if (!currentUser) {
+    return (
+      <div className="app-shell">
+        {errorMessage ? <div className="alert error">{errorMessage}</div> : null}
+        {infoMessage ? <div className="alert info">{infoMessage}</div> : null}
 
-    setIsBusy(true);
-    setErrorMessage("");
-    setInfoMessage("");
+        <section className="hero">
+          <div className="panel" style={{ padding: 28 }}>
+            <p className="eyebrow">Практики 9-10</p>
+            <h1>Electro Store с JWT и refresh token</h1>
+            <p className="hero-text">
+              Войдите или зарегистрируйтесь, чтобы открыть каталог, посмотреть карточку товара
+              по ID и управлять товарами через единый API `/api/products`.
+            </p>
+          </div>
 
-    try {
-      const property = await api.getPropertyById(propertyId);
-      setSelectedProperty(property);
-      setFormMode("create");
-    } catch (error) {
-      setErrorMessage(mapError(error, "Не удалось получить объект недвижимости."));
-    } finally {
-      setIsBusy(false);
-    }
-  }
+          <div className="hero-card">
+            <div className="badge">{mode === "login" ? "Вход" : "Регистрация"}</div>
 
-  function handleEditSelectedProperty() {
-    if (!selectedProperty) {
-      return;
-    }
-
-    setFormMode("edit");
-    setPropertyForm({
-      title: selectedProperty.title,
-      propertyType: selectedProperty.propertyType,
-      address: selectedProperty.address,
-      description: selectedProperty.description,
-      price: String(selectedProperty.price),
-      area: String(selectedProperty.area)
-    });
-    setInfoMessage("Форма заполнена данными выбранного объявления.");
-    setErrorMessage("");
-  }
-
-  async function handlePropertySubmit(event) {
-    event.preventDefault();
-
-    if (!currentUser) {
-      setErrorMessage("Сначала войдите в систему.");
-      return;
-    }
-
-    setIsBusy(true);
-    setErrorMessage("");
-    setInfoMessage("");
-
-    try {
-      if (formMode === "edit" && selectedProperty) {
-        const updatedProperty = await api.updateProperty(selectedProperty.id, propertyForm);
-        setSelectedProperty(updatedProperty);
-        setInfoMessage("Объявление успешно обновлено.");
-      } else {
-        const createdProperty = await api.createProperty(propertyForm);
-        setSelectedProperty(createdProperty);
-        setInfoMessage("Объявление успешно создано.");
-      }
-
-      resetPropertyForm();
-      await loadProperties();
-    } catch (error) {
-      setErrorMessage(mapError(error, "Не удалось сохранить объявление."));
-    } finally {
-      setIsBusy(false);
-    }
-  }
-
-  async function handleDeleteSelectedProperty() {
-    if (!currentUser || !selectedProperty) {
-      return;
-    }
-
-    setIsBusy(true);
-    setErrorMessage("");
-    setInfoMessage("");
-
-    try {
-      await api.deleteProperty(selectedProperty.id);
-      setSelectedProperty(null);
-      resetPropertyForm();
-      await loadProperties();
-      setInfoMessage("Объявление удалено.");
-    } catch (error) {
-      setErrorMessage(mapError(error, "Не удалось удалить объявление."));
-    } finally {
-      setIsBusy(false);
-    }
-  }
-
-  return (
-    <div className="app-shell">
-      <header className="hero">
-        <div>
-          <p className="eyebrow">Практика 9-10</p>
-          <h1>React-клиент для JWT-авторизации и каталога недвижимости</h1>
-          <p className="hero-text">
-            Интерфейс работает с access token и refresh token, автоматически
-            обновляет сессию и позволяет управлять объявлениями о недвижимости после входа.
-          </p>
-        </div>
-
-        <div className="hero-card">
-          <span className="badge">
-            {currentUser ? `Пользователь: ${currentUser.username}` : "Гость"}
-          </span>
-          <p className="hint">
-            Бэкенд: <code>http://localhost:3000</code>
-          </p>
-          <p className="hint">
-            Фронтенд: <code>http://localhost:3001</code>
-          </p>
-          {currentUser ? (
-            <button className="secondary-button" onClick={handleLogout}>
-              Выйти
-            </button>
-          ) : null}
-        </div>
-      </header>
-
-      {errorMessage ? <div className="alert error">{errorMessage}</div> : null}
-      {infoMessage ? <div className="alert info">{infoMessage}</div> : null}
-
-      <main className="grid-layout">
-        <section className="panel">
-          <div className="panel-header">
-            <h2>{mode === "login" ? "Вход" : "Регистрация"}</h2>
             <div className="segmented">
               <button
                 className={mode === "login" ? "active" : ""}
@@ -286,244 +297,240 @@ export default function App() {
                 Регистрация
               </button>
             </div>
-          </div>
 
-          <form className="stack" onSubmit={handleAuthSubmit}>
-            <label>
-              Логин
-              <input
-                value={authForm.username}
-                onChange={(event) =>
-                  setAuthForm((current) => ({
-                    ...current,
-                    username: event.target.value
-                  }))
-                }
-                placeholder="student"
-                required
-              />
-            </label>
-            <label>
-              Пароль
-              <input
-                type="password"
-                value={authForm.password}
-                onChange={(event) =>
-                  setAuthForm((current) => ({
-                    ...current,
-                    password: event.target.value
-                  }))
-                }
-                placeholder="1234"
-                required
-              />
-            </label>
-            <button className="primary-button" type="submit" disabled={isBusy}>
-              {mode === "login" ? "Войти" : "Создать аккаунт"}
-            </button>
-          </form>
+            <form className="stack" onSubmit={handleAuthSubmit}>
+              <label>
+                Email
+                <input
+                  value={authForm.email}
+                  onChange={(event) =>
+                    setAuthForm((prev) => ({ ...prev, email: event.target.value }))
+                  }
+                  type="email"
+                  required
+                />
+              </label>
 
-          <div className="note">
-            После входа форма объявлений станет доступной, а детальная карточка объекта
-            будет загружаться через защищенный маршрут.
-          </div>
-        </section>
+              {mode === "register" ? (
+                <>
+                  <label>
+                    Имя
+                    <input
+                      value={authForm.first_name}
+                      onChange={(event) =>
+                        setAuthForm((prev) => ({ ...prev, first_name: event.target.value }))
+                      }
+                      required
+                    />
+                  </label>
 
-        <section className="panel">
-          <div className="panel-header">
-            <h2>Объекты недвижимости</h2>
-            <button className="ghost-button" type="button" onClick={handleReloadProperties}>
-              Обновить список
-            </button>
-          </div>
+                  <label>
+                    Фамилия
+                    <input
+                      value={authForm.last_name}
+                      onChange={(event) =>
+                        setAuthForm((prev) => ({ ...prev, last_name: event.target.value }))
+                      }
+                      required
+                    />
+                  </label>
+                </>
+              ) : null}
 
-          <div className="products-list">
-            {properties.map((property) => (
-              <button
-                key={property.id}
-                className={`product-card ${
-                  selectedProperty?.id === property.id ? "selected" : ""
-                }`}
-                onClick={() => handleSelectProperty(property.id)}
-                type="button"
-              >
-                <span className="product-category">{property.propertyType}</span>
-                <strong>{property.title}</strong>
-                <span>{property.address}</span>
-                <span>{formatPrice(property.price)} руб.</span>
-                <small>Площадь: {property.area} м²</small>
+              <label>
+                Пароль
+                <input
+                  value={authForm.password}
+                  onChange={(event) =>
+                    setAuthForm((prev) => ({ ...prev, password: event.target.value }))
+                  }
+                  type="password"
+                  required
+                />
+              </label>
+
+              <button className="primary-button" disabled={isBusy} type="submit">
+                {isBusy ? "Подождите..." : mode === "login" ? "Войти" : "Создать аккаунт"}
               </button>
-            ))}
+            </form>
 
-            {!properties.length ? <p className="empty">Список объявлений пуст.</p> : null}
+            <p className="hint">
+              `POST /api/auth/login` возвращает пару токенов, а клиент автоматически обновляет
+              access token через `x-refresh-token`.
+            </p>
           </div>
         </section>
+      </div>
+    );
+  }
 
-        <section className="panel">
+  return (
+    <div className="app-shell">
+      {errorMessage ? <div className="alert error">{errorMessage}</div> : null}
+      {infoMessage ? <div className="alert info">{infoMessage}</div> : null}
+
+      <section className="hero">
+        <div className="panel" style={{ padding: 28 }}>
+          <p className="eyebrow">Авторизованный режим</p>
+          <h1>Каталог электроники</h1>
+          <p className="hero-text">
+            Пользователь: {currentUser.first_name} {currentUser.last_name} ({currentUser.email}).
+            Каталог, карточка товара и форма редактирования работают поверх одного JWT API.
+          </p>
+        </div>
+
+        <div className="hero-card">
+          <div className="badge">Session Active</div>
+          <p className="hint">Access token обновляется автоматически через refresh token.</p>
+          <button className="secondary-button" onClick={handleReloadProducts} type="button">
+            Обновить каталог
+          </button>
+          <button className="ghost-button" onClick={handleLogout} type="button">
+            Выйти
+          </button>
+        </div>
+      </section>
+
+      <section className="grid-layout">
+        <article className="panel">
           <div className="panel-header">
-            <h2>{formMode === "edit" ? "Редактирование объявления" : "Новое объявление"}</h2>
-            <button className="ghost-button" type="button" onClick={resetPropertyForm}>
-              Очистить форму
+            <h2>Список товаров</h2>
+            <button className="ghost-button" onClick={resetProductForm} type="button">
+              Новый товар
             </button>
           </div>
 
-          <form className="stack" onSubmit={handlePropertySubmit}>
+          {products.length === 0 ? (
+            <p className="empty">Каталог пока пуст.</p>
+          ) : (
+            <div className="products-list">
+              {products.map((product) => (
+                <button
+                  key={product.id}
+                  className={`product-card ${selectedProduct?.id === product.id ? "selected" : ""}`}
+                  onClick={() => handleSelectProduct(product.id)}
+                  type="button"
+                >
+                  <span className="product-category">{product.category}</span>
+                  <strong>{product.title}</strong>
+                  <span>{formatPrice(product.price)}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </article>
+
+        <article className="panel">
+          <div className="panel-header">
+            <h2>Карточка товара</h2>
+            <span className="note">{selectedProduct ? `ID: ${selectedProduct.id}` : "Выберите товар"}</span>
+          </div>
+
+          {selectedProduct ? (
+            <div className="details-card">
+              <span className="product-category">{selectedProduct.category}</span>
+              <h3>{selectedProduct.title}</h3>
+              <div className="details-meta">
+                <span>{formatPrice(selectedProduct.price)}</span>
+                <span>JWT detail route</span>
+              </div>
+              <p className="note">{selectedProduct.description}</p>
+              <dl>
+                <div>
+                  <dt>Категория</dt>
+                  <dd>{selectedProduct.category}</dd>
+                </div>
+                <div>
+                  <dt>Цена</dt>
+                  <dd>{formatPrice(selectedProduct.price)}</dd>
+                </div>
+                <div>
+                  <dt>Идентификатор</dt>
+                  <dd>{selectedProduct.id}</dd>
+                </div>
+              </dl>
+
+              <div className="inline-actions">
+                <button className="ghost-button" onClick={startEditingProduct} type="button">
+                  Редактировать
+                </button>
+                <button className="danger-button" onClick={handleDeleteSelected} type="button">
+                  Удалить
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="empty">После загрузки каталога выберите товар слева.</p>
+          )}
+        </article>
+
+        <article className="panel">
+          <div className="panel-header">
+            <h2>{formMode === "edit" ? "Редактирование товара" : "Создание товара"}</h2>
+            {formMode === "edit" ? (
+              <button className="ghost-button" onClick={resetProductForm} type="button">
+                Отмена
+              </button>
+            ) : null}
+          </div>
+
+          <form className="stack" onSubmit={handleProductSubmit}>
             <label>
-              Заголовок объявления
+              Название товара
               <input
-                value={propertyForm.title}
+                value={productForm.title}
                 onChange={(event) =>
-                  setPropertyForm((current) => ({
-                    ...current,
-                    title: event.target.value
-                  }))
+                  setProductForm((prev) => ({ ...prev, title: event.target.value }))
                 }
-                placeholder="Студия рядом с метро"
                 required
               />
             </label>
+
             <label>
-              Тип объекта
+              Категория
               <input
-                value={propertyForm.propertyType}
+                value={productForm.category}
                 onChange={(event) =>
-                  setPropertyForm((current) => ({
-                    ...current,
-                    propertyType: event.target.value
-                  }))
+                  setProductForm((prev) => ({ ...prev, category: event.target.value }))
                 }
-                placeholder="Квартира"
                 required
               />
             </label>
-            <label>
-              Адрес
-              <input
-                value={propertyForm.address}
-                onChange={(event) =>
-                  setPropertyForm((current) => ({
-                    ...current,
-                    address: event.target.value
-                  }))
-                }
-                placeholder="Санкт-Петербург, ул. Примерная, 15"
-                required
-              />
-            </label>
+
             <label>
               Описание
               <textarea
-                rows="4"
-                value={propertyForm.description}
+                value={productForm.description}
                 onChange={(event) =>
-                  setPropertyForm((current) => ({
-                    ...current,
-                    description: event.target.value
-                  }))
+                  setProductForm((prev) => ({ ...prev, description: event.target.value }))
                 }
-                placeholder="Опишите состояние, район и преимущества объекта"
-                required
-              />
-            </label>
-            <label>
-              Стоимость
-              <input
-                type="number"
-                min="1"
-                value={propertyForm.price}
-                onChange={(event) =>
-                  setPropertyForm((current) => ({
-                    ...current,
-                    price: event.target.value
-                  }))
-                }
-                placeholder="6500000"
-                required
-              />
-            </label>
-            <label>
-              Площадь, м²
-              <input
-                type="number"
-                min="1"
-                value={propertyForm.area}
-                onChange={(event) =>
-                  setPropertyForm((current) => ({
-                    ...current,
-                    area: event.target.value
-                  }))
-                }
-                placeholder="42"
+                rows={5}
                 required
               />
             </label>
 
-            <button className="primary-button" type="submit" disabled={isBusy || !currentUser}>
-              {formMode === "edit" ? "Сохранить изменения" : "Создать объявление"}
+            <label>
+              Цена
+              <input
+                value={productForm.price}
+                onChange={(event) =>
+                  setProductForm((prev) => ({ ...prev, price: event.target.value }))
+                }
+                inputMode="numeric"
+                required
+              />
+            </label>
+
+            <button className="primary-button" disabled={isBusy} type="submit">
+              {formMode === "edit" ? "Сохранить товар" : "Создать товар"}
             </button>
           </form>
-
-          {!currentUser ? (
-            <p className="empty">Авторизуйтесь, чтобы создавать и редактировать объявления.</p>
-          ) : null}
-        </section>
-      </main>
-
-      <section className="panel details-panel">
-        <div className="panel-header">
-          <h2>Карточка объекта</h2>
-          {selectedProperty ? (
-            <div className="inline-actions">
-              <button className="ghost-button" type="button" onClick={handleEditSelectedProperty}>
-                Заполнить форму для редактирования
-              </button>
-              <button
-                className="danger-button"
-                type="button"
-                onClick={handleDeleteSelectedProperty}
-                disabled={!currentUser || isBusy}
-              >
-                Удалить
-              </button>
-            </div>
-          ) : null}
-        </div>
-
-        {selectedProperty ? (
-          <div className="details-card">
-            <div className="details-meta">
-              <span>{selectedProperty.propertyType}</span>
-              <span>{formatPrice(selectedProperty.price)} руб.</span>
-            </div>
-            <h3>{selectedProperty.title}</h3>
-            <p>{selectedProperty.address}</p>
-            <p>{selectedProperty.description}</p>
-            <dl>
-              <div>
-                <dt>ID</dt>
-                <dd>{selectedProperty.id}</dd>
-              </div>
-              <div>
-                <dt>Риелтор</dt>
-                <dd>{selectedProperty.agentUsername}</dd>
-              </div>
-              <div>
-                <dt>Площадь</dt>
-                <dd>{selectedProperty.area} м²</dd>
-              </div>
-            </dl>
-          </div>
-        ) : (
-          <p className="empty">
-            Выберите объект из списка. Детальный просмотр доступен через защищенный маршрут
-            и требует авторизации.
-          </p>
-        )}
+        </article>
       </section>
 
-      <footer className="footer-note">
-        {isBusy ? "Выполняется запрос..." : "Проект готов для практик 9 и 10."}
-      </footer>
+      <p className="footer-note">
+        Практика 10 использует frontend-flow `register/login -> list -> detail -> create -> edit -> delete`.
+      </p>
     </div>
   );
 }

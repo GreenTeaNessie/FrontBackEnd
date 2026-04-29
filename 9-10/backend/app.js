@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const { nanoid } = require("nanoid");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 
 const ACCESS_SECRET = process.env.ACCESS_SECRET || "practice_9_10_access_secret";
 const REFRESH_SECRET = process.env.REFRESH_SECRET || "practice_9_10_refresh_secret";
@@ -14,169 +14,166 @@ const REFRESH_EXPIRES_IN = "7d";
 
 app.use(
   cors({
-    origin: ["http://localhost:3001"],
-    credentials: true
+    origin: "http://localhost:3001",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-refresh-token"]
   })
 );
 app.use(express.json());
 
-const users = [];
+function createSeedProducts() {
+  return [
+    {
+      id: nanoid(6),
+      title: "Ноутбук NovaBook Air 14",
+      category: "Ноутбуки",
+      description: "Легкий ноутбук для учебы и работы с SSD 512 ГБ.",
+      price: 74990
+    },
+    {
+      id: nanoid(6),
+      title: "Смартфон Pulse X12",
+      category: "Смартфоны",
+      description: "Смартфон с AMOLED-дисплеем, камерой 50 Мп и быстрой зарядкой.",
+      price: 42990
+    },
+    {
+      id: nanoid(6),
+      title: "Планшет ViewTab 11",
+      category: "Планшеты",
+      description: "Планшет для мультимедиа и заметок с поддержкой стилуса.",
+      price: 36990
+    },
+    {
+      id: nanoid(6),
+      title: "Монитор PixelView 27",
+      category: "Мониторы",
+      description: "27-дюймовый IPS-монитор с частотой обновления 144 Гц.",
+      price: 28990
+    }
+  ];
+}
+
+let users = [];
+let products = createSeedProducts();
 const refreshTokens = new Map();
-const properties = [
-  {
-    id: nanoid(8),
-    title: "Студия с панорамными окнами",
-    propertyType: "Квартира",
-    address: "Санкт-Петербург, Мурино, ул. Шувалова, 14",
-    description: "Новая студия рядом с метро, подходит для жизни или сдачи в аренду.",
-    price: 5650000,
-    area: 28,
-    agentId: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: nanoid(8),
-    title: "Таунхаус с участком",
-    propertyType: "Дом",
-    address: "Ленинградская область, Всеволожск, Кленовая аллея, 7",
-    description: "Двухэтажный таунхаус с парковкой, террасой и небольшим садом.",
-    price: 16400000,
-    area: 118,
-    agentId: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+
+app.use((req, res, next) => {
+  res.on("finish", () => {
+    console.log(`[${new Date().toISOString()}] [${req.method}] ${res.statusCode} ${req.path}`);
+
+    if (req.method === "POST" || req.method === "PUT") {
+      console.log("Body:", req.body);
+    }
+  });
+
+  next();
+});
+
+function isValidEmail(email) {
+  return typeof email === "string" && email.includes("@") && email.trim().length >= 5;
+}
+
+function validateTextField(value, label) {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return `${label} обязательно`;
   }
-];
 
-function sanitizeUser(user) {
-  return {
-    id: user.id,
-    username: user.username,
-    createdAt: user.createdAt
-  };
+  return null;
 }
 
-function enrichProperty(property) {
-  const agent = users.find((user) => user.id === property.agentId);
+function validateProductPayload(payload) {
+  const title = payload.title !== undefined ? String(payload.title).trim() : "";
+  const category = payload.category !== undefined ? String(payload.category).trim() : "";
+  const description = payload.description !== undefined ? String(payload.description).trim() : "";
+  const price = payload.price !== undefined ? Number(payload.price) : Number.NaN;
 
-  return {
-    ...property,
-    agentUsername: agent ? agent.username : "agency-demo"
-  };
-}
+  const textErrors = [
+    validateTextField(title, "Название товара"),
+    validateTextField(category, "Категория"),
+    validateTextField(description, "Описание")
+  ].filter(Boolean);
 
-function normalizePropertyPayload(payload) {
-  const title = String(payload.title || "").trim();
-  const propertyType = String(payload.propertyType || "").trim();
-  const address = String(payload.address || "").trim();
-  const description = String(payload.description || "").trim();
-  const price = Number(payload.price);
-  const area = Number(payload.area);
-
-  if (!title || !propertyType || !address || !description) {
-    return { error: "title, propertyType, address and description are required" };
+  if (textErrors.length > 0) {
+    return { error: textErrors[0] };
   }
 
   if (!Number.isFinite(price) || price <= 0) {
-    return { error: "price must be a positive number" };
-  }
-
-  if (!Number.isFinite(area) || area <= 0) {
-    return { error: "area must be a positive number" };
+    return { error: "Цена должна быть положительным числом" };
   }
 
   return {
     value: {
       title,
-      propertyType,
-      address,
+      category,
       description,
-      price,
-      area
+      price
     }
   };
 }
 
-function extractRefreshToken(req) {
-  const headerToken =
-    req.headers["x-refresh-token"] ||
-    req.headers["refresh-token"] ||
-    req.headers["x-token-refresh"];
-
-  if (headerToken) {
-    return String(headerToken).trim();
-  }
-
-  const { refreshToken } = req.body || {};
-  return refreshToken ? String(refreshToken).trim() : "";
-}
-
-function generateAccessToken(user) {
-  return jwt.sign(
-    {
-      sub: user.id,
-      username: user.username
-    },
-    ACCESS_SECRET,
-    {
-      expiresIn: ACCESS_EXPIRES_IN
-    }
-  );
-}
-
-function generateRefreshToken(user) {
-  return jwt.sign(
-    {
-      sub: user.id,
-      username: user.username
-    },
-    REFRESH_SECRET,
-    {
-      expiresIn: REFRESH_EXPIRES_IN
-    }
-  );
+function sanitizeUser(user) {
+  return {
+    id: user.id,
+    email: user.email,
+    first_name: user.first_name,
+    last_name: user.last_name
+  };
 }
 
 function issueTokens(user) {
-  const accessToken = generateAccessToken(user);
-  const refreshToken = generateRefreshToken(user);
+  const accessToken = jwt.sign(
+    {
+      sub: user.id,
+      email: user.email
+    },
+    ACCESS_SECRET,
+    { expiresIn: ACCESS_EXPIRES_IN }
+  );
+
+  const refreshToken = jwt.sign(
+    {
+      sub: user.id
+    },
+    REFRESH_SECRET,
+    { expiresIn: REFRESH_EXPIRES_IN }
+  );
 
   refreshTokens.set(refreshToken, user.id);
 
-  return {
-    accessToken,
-    refreshToken
-  };
+  return { accessToken, refreshToken };
+}
+
+function extractRefreshToken(req) {
+  return req.headers["x-refresh-token"] || req.body?.refreshToken || "";
 }
 
 function authMiddleware(req, res, next) {
-  const header = req.headers.authorization || "";
-  const [scheme, token] = header.split(" ");
+  const authorization = req.headers.authorization || "";
+  const [scheme, token] = authorization.split(" ");
 
   if (scheme !== "Bearer" || !token) {
-    return res.status(401).json({
-      error: "Missing or invalid Authorization header"
-    });
+    return res.status(401).json({ error: "Требуется Bearer token" });
   }
 
   try {
     const payload = jwt.verify(token, ACCESS_SECRET);
-    const user = users.find((item) => item.id === payload.sub);
-
-    if (!user) {
-      return res.status(401).json({
-        error: "User not found"
-      });
-    }
-
-    req.user = user;
-    next();
+    req.auth = payload;
+    return next();
   } catch (error) {
-    return res.status(401).json({
-      error: "Invalid or expired token"
-    });
+    return res.status(401).json({ error: "Токен недействителен или истек" });
   }
+}
+
+function findProductOr404(id, res) {
+  const product = products.find((item) => item.id === id);
+
+  if (!product) {
+    res.status(404).json({ error: "Товар не найден" });
+    return null;
+  }
+
+  return product;
 }
 
 app.get("/api/health", (req, res) => {
@@ -184,86 +181,74 @@ app.get("/api/health", (req, res) => {
 });
 
 app.post("/api/auth/register", async (req, res) => {
-  const username = String(req.body.username || "").trim();
-  const password = String(req.body.password || "").trim();
+  const { email, first_name, last_name, password } = req.body;
 
-  if (!username || !password) {
-    return res.status(400).json({
-      error: "username and password are required"
-    });
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ error: "Некорректный email" });
   }
 
-  if (password.length < 4) {
-    return res.status(400).json({
-      error: "password must contain at least 4 characters"
-    });
+  const firstNameError = validateTextField(first_name, "Имя");
+  const lastNameError = validateTextField(last_name, "Фамилия");
+
+  if (firstNameError || lastNameError) {
+    return res.status(400).json({ error: firstNameError || lastNameError });
   }
 
-  const exists = users.some((user) => user.username === username);
-  if (exists) {
-    return res.status(409).json({
-      error: "username already exists"
-    });
+  if (typeof password !== "string" || password.length < 6) {
+    return res.status(400).json({ error: "Пароль должен содержать минимум 6 символов" });
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (users.some((user) => user.email === normalizedEmail)) {
+    return res.status(409).json({ error: "Пользователь с таким email уже существует" });
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
   const user = {
-    id: nanoid(8),
-    username,
-    passwordHash,
-    createdAt: new Date().toISOString()
+    id: nanoid(6),
+    email: normalizedEmail,
+    first_name: first_name.trim(),
+    last_name: last_name.trim(),
+    passwordHash
   };
 
   users.push(user);
-
   return res.status(201).json(sanitizeUser(user));
 });
 
 app.post("/api/auth/login", async (req, res) => {
-  const username = String(req.body.username || "").trim();
-  const password = String(req.body.password || "").trim();
+  const { email, password } = req.body;
 
-  if (!username || !password) {
-    return res.status(400).json({
-      error: "username and password are required"
-    });
+  if (!isValidEmail(email) || typeof password !== "string") {
+    return res.status(400).json({ error: "Требуются email и password" });
   }
 
-  const user = users.find((item) => item.username === username);
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = users.find((item) => item.email === normalizedEmail);
+
   if (!user) {
-    return res.status(401).json({
-      error: "Invalid credentials"
-    });
+    return res.status(401).json({ error: "Неверный email или пароль" });
   }
 
-  const isValidPassword = await bcrypt.compare(password, user.passwordHash);
-  if (!isValidPassword) {
-    return res.status(401).json({
-      error: "Invalid credentials"
-    });
+  const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+
+  if (!isPasswordValid) {
+    return res.status(401).json({ error: "Неверный email или пароль" });
   }
 
-  const tokens = issueTokens(user);
-
-  return res.json({
-    ...tokens,
-    user: sanitizeUser(user)
-  });
+  return res.json(issueTokens(user));
 });
 
 app.post("/api/auth/refresh", (req, res) => {
   const refreshToken = extractRefreshToken(req);
 
   if (!refreshToken) {
-    return res.status(400).json({
-      error: "refreshToken is required"
-    });
+    return res.status(400).json({ error: "Refresh token не передан" });
   }
 
   if (!refreshTokens.has(refreshToken)) {
-    return res.status(401).json({
-      error: "Invalid refresh token"
-    });
+    return res.status(401).json({ error: "Refresh token не найден" });
   }
 
   try {
@@ -272,120 +257,94 @@ app.post("/api/auth/refresh", (req, res) => {
 
     if (!user) {
       refreshTokens.delete(refreshToken);
-      return res.status(401).json({
-        error: "User not found"
-      });
+      return res.status(401).json({ error: "Пользователь не найден" });
     }
 
     refreshTokens.delete(refreshToken);
-    const tokens = issueTokens(user);
-
-    return res.json(tokens);
+    return res.json(issueTokens(user));
   } catch (error) {
     refreshTokens.delete(refreshToken);
-    return res.status(401).json({
-      error: "Invalid or expired refresh token"
-    });
+    return res.status(401).json({ error: "Refresh token недействителен или истек" });
   }
 });
 
 app.get("/api/auth/me", authMiddleware, (req, res) => {
-  return res.json(sanitizeUser(req.user));
-});
+  const user = users.find((item) => item.id === req.auth.sub);
 
-app.get("/api/properties", (req, res) => {
-  return res.json(properties.map(enrichProperty));
-});
-
-app.post("/api/properties", authMiddleware, (req, res) => {
-  const normalized = normalizePropertyPayload(req.body || {});
-
-  if (normalized.error) {
-    return res.status(400).json({
-      error: normalized.error
-    });
+  if (!user) {
+    return res.status(404).json({ error: "Пользователь не найден" });
   }
 
-  const property = {
-    id: nanoid(8),
-    ...normalized.value,
-    agentId: req.user.id,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+  return res.json(sanitizeUser(user));
+});
+
+app.get("/api/products", (req, res) => {
+  res.json(products);
+});
+
+app.get("/api/products/:id", authMiddleware, (req, res) => {
+  const product = findProductOr404(req.params.id, res);
+
+  if (!product) {
+    return;
+  }
+
+  return res.json(product);
+});
+
+app.post("/api/products", authMiddleware, (req, res) => {
+  const result = validateProductPayload(req.body);
+
+  if (result.error) {
+    return res.status(400).json({ error: result.error });
+  }
+
+  const product = {
+    id: nanoid(6),
+    ...result.value
   };
 
-  properties.unshift(property);
-
-  return res.status(201).json(enrichProperty(property));
+  products.push(product);
+  return res.status(201).json(product);
 });
 
-app.get("/api/properties/:id", authMiddleware, (req, res) => {
-  const property = properties.find((item) => item.id === req.params.id);
+app.put("/api/products/:id", authMiddleware, (req, res) => {
+  const product = findProductOr404(req.params.id, res);
 
-  if (!property) {
-    return res.status(404).json({
-      error: "Property not found"
-    });
+  if (!product) {
+    return;
   }
 
-  return res.json(enrichProperty(property));
+  const result = validateProductPayload(req.body);
+
+  if (result.error) {
+    return res.status(400).json({ error: result.error });
+  }
+
+  Object.assign(product, result.value);
+  return res.json(product);
 });
 
-app.put("/api/properties/:id", authMiddleware, (req, res) => {
-  const property = properties.find((item) => item.id === req.params.id);
+app.delete("/api/products/:id", authMiddleware, (req, res) => {
+  const exists = products.some((item) => item.id === req.params.id);
 
-  if (!property) {
-    return res.status(404).json({
-      error: "Property not found"
-    });
+  if (!exists) {
+    return res.status(404).json({ error: "Товар не найден" });
   }
 
-  const normalized = normalizePropertyPayload(req.body || {});
-
-  if (normalized.error) {
-    return res.status(400).json({
-      error: normalized.error
-    });
-  }
-
-  property.title = normalized.value.title;
-  property.propertyType = normalized.value.propertyType;
-  property.address = normalized.value.address;
-  property.description = normalized.value.description;
-  property.price = normalized.value.price;
-  property.area = normalized.value.area;
-  property.updatedAt = new Date().toISOString();
-
-  return res.json(enrichProperty(property));
-});
-
-app.delete("/api/properties/:id", authMiddleware, (req, res) => {
-  const index = properties.findIndex((item) => item.id === req.params.id);
-
-  if (index === -1) {
-    return res.status(404).json({
-      error: "Property not found"
-    });
-  }
-
-  properties.splice(index, 1);
-
+  products = products.filter((item) => item.id !== req.params.id);
   return res.status(204).send();
 });
 
 app.use((req, res) => {
-  res.status(404).json({
-    error: "Route not found"
-  });
+  res.status(404).json({ error: "Маршрут не найден" });
 });
 
-app.use((error, req, res, next) => {
-  console.error(error);
-  res.status(500).json({
-    error: "Internal server error"
-  });
+app.use((err, req, res, next) => {
+  console.error("Необработанная ошибка:", err);
+  res.status(500).json({ error: "Внутренняя ошибка сервера" });
 });
 
-app.listen(PORT, () => {
-  console.log(`Practice 9-10 backend started on http://localhost:${PORT}`);
+app.listen(port, () => {
+  console.log(`Сервер запущен на http://localhost:${port}`);
 });

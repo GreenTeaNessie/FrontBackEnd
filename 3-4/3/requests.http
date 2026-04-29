@@ -1,40 +1,43 @@
-﻿### Получить список объектов недвижимости
-GET http://localhost:3000/properties
+### ПРАКТИКА №3 — Локальная проверка API из задания №2
+### Перед запуском поднимите сервер из ../1-2/2 на http://localhost:3000
 
-### Получить объект по ID
-GET http://localhost:3000/properties/1
+### 1. Получить список товаров
+GET http://localhost:3000/products
 
-### Создать объект недвижимости
-POST http://localhost:3000/properties
+### 2. Добавить товар
+POST http://localhost:3000/products
 Content-Type: application/json
 
 {
-  "name": "1-комнатная 35 м², Парнас",
-  "price": 7200000
+  "title": "Клавиатура MechaBoard TKL",
+  "price": 8990
 }
 
-### Полностью обновить объект
-PUT http://localhost:3000/properties/1
+### 3. Обновить товар
+PATCH http://localhost:3000/products/1
 Content-Type: application/json
 
 {
-  "name": "Студия 27 м², Мурино (обновлено)",
-  "price": 5300000
+  "price": 91990
 }
 
-### Частично обновить объект
-PATCH http://localhost:3000/properties/1
-Content-Type: application/json
+### ПРАКТИКА №3 — Внешний API через локальный прокси
+### Перед запуском задайте EXCHANGE_RATE_API_KEY и поднимите server.js на http://localhost:3001
 
-{
-  "price": 4900000
-}
+### 4. Проверка состояния прокси
+GET http://localhost:3001/health
 
-### Удалить объект
-DELETE http://localhost:3000/properties/1
+### 5. Получить все курсы от USD
+GET http://localhost:3001/api/exchange-rate/USD
 
-### Локальный прокси к ExchangeRate-API (все курсы от USD)
-GET http://localhost:3000/exchange-rate/USD
+### 6. Получить курс USD -> RUB
+GET http://localhost:3001/api/exchange-rate/USD?target=RUB
 
-### Локальный прокси к ExchangeRate-API (USD -> RUB)
-GET http://localhost:3000/exchange-rate/USD?target=RUB
+### 7. Получить курс EUR -> KZT
+GET http://localhost:3001/api/exchange-rate/EUR?target=KZT
+
+### 8. Получить курс GBP -> JPY
+GET http://localhost:3001/api/exchange-rate/GBP?target=JPY
+
+### 9. Получить курс CNY -> BYN
+GET http://localhost:3001/api/exchange-rate/CNY?target=BYN

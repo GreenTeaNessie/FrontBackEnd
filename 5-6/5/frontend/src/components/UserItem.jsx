@@ -1,5 +1,5 @@
-export default function PropertyItem({ property, onEdit, onDelete }) {
-  const formattedPrice = Number(property.price).toLocaleString("ru-RU");
+export default function ProductItem({ product, onEdit, onDelete }) {
+  const formattedPrice = Number(product.price).toLocaleString("ru-RU");
 
   return (
     <li
@@ -7,7 +7,7 @@ export default function PropertyItem({ property, onEdit, onDelete }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "10px 12px",
+        padding: "12px 14px",
         border: "1px solid #d0d7de",
         borderRadius: 8,
         marginBottom: 8,
@@ -15,17 +15,17 @@ export default function PropertyItem({ property, onEdit, onDelete }) {
       }}
     >
       <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        <strong>{property.name}</strong>
+        <strong>{product.title}</strong>
         <span style={{ fontSize: 13, color: "#555" }}>
-          {property.category} &mdash; {formattedPrice} ₽
+          {product.category} • {formattedPrice} ₽ • Остаток: {product.stock}
         </span>
-        <span style={{ fontSize: 12, color: "#777" }}>{property.description}</span>
+        <span style={{ fontSize: 12, color: "#777" }}>{product.description}</span>
       </span>
       <span style={{ display: "flex", gap: 8 }}>
-        <button type="button" onClick={() => onEdit(property)}>
+        <button type="button" onClick={() => onEdit(product)}>
           Редактировать
         </button>
-        <button type="button" onClick={() => onDelete(property.id)}>
+        <button type="button" onClick={() => onDelete(product.id)}>
           Удалить
         </button>
       </span>

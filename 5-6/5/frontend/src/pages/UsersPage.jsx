@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
-import PropertyItem from "../components/UserItem";
-import PropertyModal from "../components/UserModal";
+import ProductItem from "../components/UserItem";
+import ProductModal from "../components/UserModal";
 
-export default function PropertiesPage() {
-  const [properties, setProperties] = useState([]);
-  const [name, setName] = useState("");
+export default function ProductsPage() {
+  const [products, setProducts] = useState([]);
+  const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
@@ -15,25 +15,25 @@ export default function PropertiesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const loadProperties = async () => {
+  const loadProducts = async () => {
     try {
       setLoading(true);
-      const response = await api.getProperties();
-      setProperties(response);
+      const response = await api.getProducts();
+      setProducts(response);
     } catch (requestError) {
       console.error(requestError);
-      setError("Не удалось загрузить объекты");
+      setError("Не удалось загрузить товары");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadProperties();
+    loadProducts();
   }, []);
 
   const openCreateModal = () => {
-    setName("");
+    setTitle("");
     setCategory("");
     setDescription("");
     setPrice("");
@@ -43,13 +43,13 @@ export default function PropertiesPage() {
     setIsModalOpen(true);
   };
 
-  const openEditModal = (property) => {
-    setName(property.name);
-    setCategory(property.category);
-    setDescription(property.description);
-    setPrice(String(property.price));
-    setStock(String(property.stock));
-    setEditingId(property.id);
+  const openEditModal = (product) => {
+    setTitle(product.title);
+    setCategory(product.category);
+    setDescription(product.description);
+    setPrice(String(product.price));
+    setStock(String(product.stock));
+    setEditingId(product.id);
     setError("");
     setIsModalOpen(true);
   };
@@ -57,7 +57,7 @@ export default function PropertiesPage() {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingId(null);
-    setName("");
+    setTitle("");
     setCategory("");
     setDescription("");
     setPrice("");
@@ -68,14 +68,14 @@ export default function PropertiesPage() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const trimmedName = name.trim();
+    const trimmedTitle = title.trim();
     const trimmedCategory = category.trim();
     const trimmedDescription = description.trim();
     const parsedPrice = Number(price);
     const parsedStock = Number(stock);
 
-    if (!trimmedName || !trimmedCategory || !trimmedDescription) {
-      setError("Заполните название, категорию и описание");
+    if (!trimmedTitle || !trimmedCategory || !trimmedDescription) {
+      setError("Заполните название товара, категорию и описание");
       return;
     }
 
@@ -91,17 +91,18 @@ export default function PropertiesPage() {
 
     try {
       setError("");
+
       if (editingId) {
-        await api.updateProperty(editingId, {
-          name: trimmedName,
+        await api.updateProduct(editingId, {
+          title: trimmedTitle,
           category: trimmedCategory,
           description: trimmedDescription,
           price: parsedPrice,
           stock: parsedStock
         });
       } else {
-        await api.createProperty({
-          name: trimmedName,
+        await api.createProduct({
+          title: trimmedTitle,
           category: trimmedCategory,
           description: trimmedDescription,
           price: parsedPrice,
@@ -110,33 +111,34 @@ export default function PropertiesPage() {
       }
 
       closeModal();
-      await loadProperties();
+      await loadProducts();
     } catch (requestError) {
       console.error(requestError);
-      setError("Ошибка сохранения объекта");
+      setError("Ошибка сохранения товара");
     }
   };
 
   const handleDelete = async (id) => {
-    const confirmed = window.confirm("Удалить объект недвижимости?");
+    const confirmed = window.confirm("Удалить товар?");
+
     if (!confirmed) {
       return;
     }
 
     try {
       setError("");
-      await api.deleteProperty(id);
-      await loadProperties();
+      await api.deleteProduct(id);
+      await loadProducts();
     } catch (requestError) {
       console.error(requestError);
-      setError("Ошибка удаления объекта");
+      setError("Ошибка удаления товара");
     }
   };
 
   return (
     <main
       style={{
-        maxWidth: 780,
+        maxWidth: 840,
         margin: "24px auto",
         padding: "0 12px",
         fontFamily: "Segoe UI, sans-serif"
@@ -150,33 +152,38 @@ export default function PropertiesPage() {
           marginBottom: 16
         }}
       >
-        <h1 style={{ margin: 0 }}>Продажа недвижимости</h1>
+        <div>
+          <h1 style={{ margin: 0 }}>Electro Store</h1>
+          <div style={{ color: "#57606a", marginTop: 4 }}>
+            Практики 5-6: CRUD товаров и Swagger документация
+          </div>
+        </div>
         <button type="button" onClick={openCreateModal}>
-          + Добавить объект
+          + Добавить товар
         </button>
       </header>
 
       {loading ? <div>Загрузка...</div> : null}
 
-      {!loading && properties.length === 0 ? <div>Объектов пока нет</div> : null}
+      {!loading && products.length === 0 ? <div>Товаров пока нет</div> : null}
 
-      {!loading && properties.length > 0 ? (
+      {!loading && products.length > 0 ? (
         <ul style={{ padding: 0, listStyle: "none", margin: 0 }}>
-          {properties.map((property) => (
-            <PropertyItem key={property.id} property={property} onEdit={openEditModal} onDelete={handleDelete} />
+          {products.map((product) => (
+            <ProductItem key={product.id} product={product} onEdit={openEditModal} onDelete={handleDelete} />
           ))}
         </ul>
       ) : null}
 
-      <PropertyModal
+      <ProductModal
         isOpen={isModalOpen}
-        title={editingId ? "Редактирование объекта" : "Создание объекта"}
-        name={name}
+        title={editingId ? "Редактирование товара" : "Создание товара"}
+        titleValue={title}
         category={category}
         description={description}
         price={price}
         stock={stock}
-        onNameChange={setName}
+        onTitleChange={setTitle}
         onCategoryChange={setCategory}
         onDescriptionChange={setDescription}
         onPriceChange={setPrice}

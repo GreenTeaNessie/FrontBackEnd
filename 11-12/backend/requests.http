@@ -1,123 +1,141 @@
-### Health
+### Проверка сервиса
 GET http://localhost:3002/api/health
 
 ###
 
-### Register buyer
+### Регистрация пользователя (роль всегда user)
 POST http://localhost:3002/api/auth/register
 Content-Type: application/json
 
 {
-  "username": "new-buyer",
-  "password": "1234",
-  "role": "user"
+  "email": "newuser@example.com",
+  "first_name": "Ольга",
+  "last_name": "Кузнецова",
+  "password": "qwerty123"
 }
 
 ###
 
-### Login realtor
+### Вход под admin
 POST http://localhost:3002/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "realtor",
-  "password": "realtor123"
+  "email": "admin@electro.local",
+  "password": "Admin1234"
 }
 
 ###
 
-### Refresh
+### Вход под seller
+POST http://localhost:3002/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "seller@electro.local",
+  "password": "Seller1234"
+}
+
+###
+
+### Вход под user
+POST http://localhost:3002/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@electro.local",
+  "password": "User1234"
+}
+
+###
+
+### Обновление access token
 POST http://localhost:3002/api/auth/refresh
 Content-Type: application/json
-x-refresh-token: REPLACE_WITH_REFRESH
+x-refresh-token: REPLACE_WITH_REFRESH_TOKEN
 
 {
-  "refreshToken": "REPLACE_WITH_REFRESH"
+  "refreshToken": "REPLACE_WITH_REFRESH_TOKEN"
 }
 
 ###
 
-### Me
+### Текущий пользователь
 GET http://localhost:3002/api/auth/me
-Authorization: Bearer REPLACE_WITH_ACCESS
+Authorization: Bearer REPLACE_WITH_ACCESS_TOKEN
 
 ###
 
-### List properties
-GET http://localhost:3002/api/properties
-Authorization: Bearer REPLACE_WITH_ACCESS
+### Список товаров (user / seller / admin)
+GET http://localhost:3002/api/products
+Authorization: Bearer REPLACE_WITH_ACCESS_TOKEN
 
 ###
 
-### Create property
-POST http://localhost:3002/api/properties
+### Получить товар по ID
+GET http://localhost:3002/api/products/REPLACE_WITH_PRODUCT_ID
+Authorization: Bearer REPLACE_WITH_ACCESS_TOKEN
+
+###
+
+### Создать товар (seller / admin)
+POST http://localhost:3002/api/products
 Content-Type: application/json
-Authorization: Bearer REPLACE_WITH_ACCESS
+Authorization: Bearer REPLACE_WITH_SELLER_OR_ADMIN_ACCESS
 
 {
-  "title": "Апартаменты в центре",
-  "propertyType": "Апартаменты",
-  "address": "Москва, ул. Большая Дмитровка, 18",
-  "description": "Объект с дизайнерской отделкой для сдачи в аренду или жизни.",
-  "price": 19800000,
-  "area": 52
+  "title": "Игровой ноутбук Storm 16",
+  "category": "Ноутбуки",
+  "description": "Модель с видеокартой RTX и экраном 165 Гц.",
+  "price": 119990
 }
 
 ###
 
-### Property by id
-GET http://localhost:3002/api/properties/REPLACE_WITH_ID
-Authorization: Bearer REPLACE_WITH_ACCESS
-
-###
-
-### Update property
-PUT http://localhost:3002/api/properties/REPLACE_WITH_ID
+### Обновить товар (seller / admin)
+PUT http://localhost:3002/api/products/REPLACE_WITH_PRODUCT_ID
 Content-Type: application/json
-Authorization: Bearer REPLACE_WITH_ACCESS
+Authorization: Bearer REPLACE_WITH_SELLER_OR_ADMIN_ACCESS
 
 {
-  "title": "Апартаменты в центре с мебелью",
-  "propertyType": "Апартаменты",
-  "address": "Москва, ул. Большая Дмитровка, 18",
-  "description": "Объект с дизайнерской отделкой, мебелью и системой умный дом.",
-  "price": 20500000,
-  "area": 52
+  "title": "Игровой ноутбук Storm 16 Pro",
+  "category": "Ноутбуки",
+  "description": "Обновленная модель с 32 ГБ RAM и RTX.",
+  "price": 139990
 }
 
 ###
 
-### Delete property
-DELETE http://localhost:3002/api/properties/REPLACE_WITH_ID
-Authorization: Bearer REPLACE_WITH_ACCESS
+### Удалить товар (только admin)
+DELETE http://localhost:3002/api/products/REPLACE_WITH_PRODUCT_ID
+Authorization: Bearer REPLACE_WITH_ADMIN_ACCESS
 
 ###
 
-### List users (admin)
+### Список пользователей (только admin)
 GET http://localhost:3002/api/users
 Authorization: Bearer REPLACE_WITH_ADMIN_ACCESS
 
 ###
 
-### User by id (admin)
+### Пользователь по ID (только admin)
 GET http://localhost:3002/api/users/REPLACE_WITH_USER_ID
 Authorization: Bearer REPLACE_WITH_ADMIN_ACCESS
 
 ###
 
-### Update user (admin)
+### Обновить пользователя (только admin)
 PUT http://localhost:3002/api/users/REPLACE_WITH_USER_ID
 Content-Type: application/json
 Authorization: Bearer REPLACE_WITH_ADMIN_ACCESS
 
 {
-  "username": "new-realtor",
   "role": "seller",
   "isBlocked": false
 }
 
 ###
 
-### Block user (admin)
+### Заблокировать пользователя (только admin)
 DELETE http://localhost:3002/api/users/REPLACE_WITH_USER_ID
 Authorization: Bearer REPLACE_WITH_ADMIN_ACCESS

@@ -112,28 +112,28 @@ export const api = {
     return response.data;
   },
 
-  async getProperties() {
-    const response = await apiClient.get("/properties");
+  async getProducts() {
+    const response = await apiClient.get("/products");
     return response.data;
   },
 
-  async getPropertyById(id) {
-    const response = await apiClient.get(`/properties/${id}`);
+  async getProductById(id) {
+    const response = await apiClient.get(`/products/${id}`);
     return response.data;
   },
 
-  async createProperty(payload) {
-    const response = await apiClient.post("/properties", payload);
+  async createProduct(payload) {
+    const response = await apiClient.post("/products", payload);
     return response.data;
   },
 
-  async updateProperty(id, payload) {
-    const response = await apiClient.put(`/properties/${id}`, payload);
+  async updateProduct(id, payload) {
+    const response = await apiClient.put(`/products/${id}`, payload);
     return response.data;
   },
 
-  async deleteProperty(id) {
-    await apiClient.delete(`/properties/${id}`);
+  async deleteProduct(id) {
+    await apiClient.delete(`/products/${id}`);
   },
 
   async getUsers() {

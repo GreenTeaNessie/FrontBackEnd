@@ -5,23 +5,27 @@ const apiClient = axios.create({
 });
 
 export const api = {
-  createProperty: async (property) => {
-    const response = await apiClient.post("/properties", property);
+  createProduct: async (product) => {
+    const response = await apiClient.post("/products", product);
     return response.data;
   },
-  getProperties: async () => {
-    const response = await apiClient.get("/properties");
+
+  getProducts: async () => {
+    const response = await apiClient.get("/products");
     return response.data;
   },
-  getPropertyById: async (id) => {
-    const response = await apiClient.get(`/properties/${id}`);
+
+  getProductById: async (id) => {
+    const response = await apiClient.get(`/products/${id}`);
     return response.data;
   },
-  updateProperty: async (id, property) => {
-    const response = await apiClient.patch(`/properties/${id}`, property);
+
+  updateProduct: async (id, product) => {
+    const response = await apiClient.patch(`/products/${id}`, product);
     return response.data;
   },
-  deleteProperty: async (id) => {
-    await apiClient.delete(`/properties/${id}`);
+
+  deleteProduct: async (id) => {
+    await apiClient.delete(`/products/${id}`);
   }
 };

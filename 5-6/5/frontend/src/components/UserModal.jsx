@@ -1,12 +1,12 @@
-export default function PropertyModal({
+export default function ProductModal({
   isOpen,
   title,
-  name,
+  titleValue,
   category,
   description,
   price,
   stock,
-  onNameChange,
+  onTitleChange,
   onCategoryChange,
   onDescriptionChange,
   onPriceChange,
@@ -47,20 +47,20 @@ export default function PropertyModal({
         <h2 style={{ margin: 0 }}>{title}</h2>
 
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span>Название</span>
-          <input value={name} onChange={(e) => onNameChange(e.target.value)} required autoFocus />
+          <span>Название товара</span>
+          <input value={titleValue} onChange={(event) => onTitleChange(event.target.value)} required autoFocus />
         </label>
 
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <span>Категория</span>
-          <input value={category} onChange={(e) => onCategoryChange(e.target.value)} required />
+          <input value={category} onChange={(event) => onCategoryChange(event.target.value)} required />
         </label>
 
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <span>Описание</span>
           <textarea
             value={description}
-            onChange={(e) => onDescriptionChange(e.target.value)}
+            onChange={(event) => onDescriptionChange(event.target.value)}
             required
             style={{ minHeight: 60, resize: "vertical" }}
           />
@@ -68,12 +68,26 @@ export default function PropertyModal({
 
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <span>Цена (₽)</span>
-          <input type="number" min="1" step="1" value={price} onChange={(e) => onPriceChange(e.target.value)} required />
+          <input
+            type="number"
+            min="1"
+            step="1"
+            value={price}
+            onChange={(event) => onPriceChange(event.target.value)}
+            required
+          />
         </label>
 
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <span>Количество</span>
-          <input type="number" min="0" step="1" value={stock} onChange={(e) => onStockChange(e.target.value)} required />
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={stock}
+            onChange={(event) => onStockChange(event.target.value)}
+            required
+          />
         </label>
 
         {error ? <div style={{ color: "#cf222e" }}>{error}</div> : null}

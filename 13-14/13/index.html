@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Практика 13 - Service Worker</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="workspace" aria-labelledby="app-title">
+      <p class="eyebrow">Практика 13</p>
+      <h1 id="app-title">Заметки офлайн</h1>
+      <p class="lead">Мини-приложение сохраняет заметки в браузере и продолжает открываться после кэширования Service Worker.</p>
+
+      <form id="note-form" class="note-form">
+        <label class="sr-only" for="note-input">Текст заметки</label>
+        <input id="note-input" type="text" placeholder="Новая заметка" autocomplete="off" required>
+        <button type="submit">Добавить</button>
+      </form>
+
+      <div class="list-header">
+        <h2>Список заметок</h2>
+        <button id="clear-notes" class="secondary" type="button">Очистить</button>
+      </div>
+      <ul id="notes-list" class="notes-list"></ul>
+      <p id="empty-state" class="empty-state">Пока нет заметок.</p>
+    </section>
+
+    <aside class="status-panel" aria-label="Статус PWA">
+      <span class="status-dot" aria-hidden="true"></span>
+      <strong id="sw-status">Service Worker проверяется</strong>
+      <p>Откройте страницу через локальный сервер, затем проверьте Application -> Service Workers и Cache Storage.</p>
+    </aside>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -1,29 +1,29 @@
-﻿### Получить список объектов недвижимости
-GET http://localhost:3000/api/properties
+### Получить список товаров
+GET http://localhost:3000/api/products
 
-### Получить объект по ID
-GET http://localhost:3000/api/properties/ID_ОБЪЕКТА
+### Получить товар по ID
+GET http://localhost:3000/api/products/PRODUCT_ID
 
-### Создать объект
-POST http://localhost:3000/api/properties
+### Создать товар
+POST http://localhost:3000/api/products
 Content-Type: application/json
 
 {
-  "name": "Студия 30 м2, Мурино",
-  "category": "Квартира",
-  "description": "Новая студия с отделкой.",
-  "price": 6200000,
-  "stock": 1
+  "title": "Игровой ноутбук Storm 16",
+  "category": "Ноутбуки",
+  "description": "Модель с видеокартой RTX и экраном 165 Гц.",
+  "price": 119990,
+  "stock": 4
 }
 
-### Частично обновить объект
-PATCH http://localhost:3000/api/properties/ID_ОБЪЕКТА
+### Частично обновить товар
+PATCH http://localhost:3000/api/products/PRODUCT_ID
 Content-Type: application/json
 
 {
-  "price": 6400000,
-  "stock": 1
+  "price": 114990,
+  "stock": 6
 }
 
-### Удалить объект
-DELETE http://localhost:3000/api/properties/ID_ОБЪЕКТА
+### Удалить товар
+DELETE http://localhost:3000/api/products/PRODUCT_ID

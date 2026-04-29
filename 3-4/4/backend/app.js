@@ -1,4 +1,4 @@
-﻿const express = require("express");
+const express = require("express");
 const cors = require("cors");
 const { nanoid } = require("nanoid");
 
@@ -12,97 +12,100 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
-
 app.use(express.json());
 
-let properties = [
-  {
-    id: nanoid(6),
-    name: "Студия 27 м2, Мурино",
-    category: "Квартира",
-    description: "Компактная студия у метро Девяткино, после ремонта.",
-    price: 5100000,
-    stock: 1
-  },
-  {
-    id: nanoid(6),
-    name: "2-комнатная 58 м2, Кудрово",
-    category: "Квартира",
-    description: "Светлая квартира с кухней-гостиной в новом ЖК.",
-    price: 8900000,
-    stock: 1
-  },
-  {
-    id: nanoid(6),
-    name: "Апартаменты 42 м2, Васильевский остров",
-    category: "Апартаменты",
-    description: "Готовые апартаменты под аренду рядом с набережной.",
-    price: 11200000,
-    stock: 1
-  },
-  {
-    id: nanoid(6),
-    name: "3-комнатная 86 м2, Приморский район",
-    category: "Квартира",
-    description: "Семейная квартира с видом на парк и подземным паркингом.",
-    price: 17400000,
-    stock: 1
-  },
-  {
-    id: nanoid(6),
-    name: "Таунхаус 120 м2, Парголово",
-    category: "Таунхаус",
-    description: "Двухэтажный таунхаус с террасой и собственным участком.",
-    price: 19800000,
-    stock: 1
-  },
-  {
-    id: nanoid(6),
-    name: "Дом 165 м2, Всеволожский район",
-    category: "Дом",
-    description: "Дом для постоянного проживания, участок 8 соток.",
-    price: 23500000,
-    stock: 1
-  },
-  {
-    id: nanoid(6),
-    name: "Коммерческое помещение 95 м2, центр",
-    category: "Коммерция",
-    description: "Первый этаж, высокий пешеходный трафик, витринные окна.",
-    price: 27600000,
-    stock: 1
-  },
-  {
-    id: nanoid(6),
-    name: "Пентхаус 140 м2, Петроградская",
-    category: "Пентхаус",
-    description: "Панорамные окна, терраса 35 м2, премиальная отделка.",
-    price: 48900000,
-    stock: 1
-  },
-  {
-    id: nanoid(6),
-    name: "Участок 12 соток, Репино",
-    category: "Земельный участок",
-    description: "Ровный участок под ИЖС, все коммуникации по границе.",
-    price: 9900000,
-    stock: 1
-  },
-  {
-    id: nanoid(6),
-    name: "Склад 600 м2, Шушары",
-    category: "Склад",
-    description: "Отапливаемый склад класса B, удобный подъезд для фур.",
-    price: 35200000,
-    stock: 1
-  }
-];
+function createSeedProducts() {
+  return [
+    {
+      id: nanoid(6),
+      title: "Ноутбук NovaBook Air 14",
+      category: "Ноутбуки",
+      description: "Легкий ноутбук для учебы и работы с экраном 14 дюймов и SSD 512 ГБ.",
+      price: 74990,
+      stock: 6
+    },
+    {
+      id: nanoid(6),
+      title: "Смартфон Pulse X12",
+      category: "Смартфоны",
+      description: "Смартфон с AMOLED-дисплеем, камерой 50 Мп и аккумулятором 5000 мАч.",
+      price: 42990,
+      stock: 18
+    },
+    {
+      id: nanoid(6),
+      title: "Планшет ViewTab 11",
+      category: "Планшеты",
+      description: "Планшет для мультимедиа и заметок с поддержкой стилуса.",
+      price: 36990,
+      stock: 9
+    },
+    {
+      id: nanoid(6),
+      title: "Монитор PixelView 27",
+      category: "Мониторы",
+      description: "27-дюймовый IPS-монитор с частотой обновления 144 Гц.",
+      price: 28990,
+      stock: 11
+    },
+    {
+      id: nanoid(6),
+      title: "Механическая клавиатура KeyForge TKL",
+      category: "Периферия",
+      description: "Компактная клавиатура с RGB-подсветкой и горячей заменой переключателей.",
+      price: 9990,
+      stock: 23
+    },
+    {
+      id: nanoid(6),
+      title: "Игровая мышь Vector Pro",
+      category: "Периферия",
+      description: "Легкая мышь с сенсором 26000 DPI и шестью программируемыми кнопками.",
+      price: 5490,
+      stock: 30
+    },
+    {
+      id: nanoid(6),
+      title: "Беспроводные наушники SoundBeat One",
+      category: "Аудио",
+      description: "Полноразмерные наушники с шумоподавлением и автономностью до 40 часов.",
+      price: 15990,
+      stock: 14
+    },
+    {
+      id: nanoid(6),
+      title: "Смарт-часы Motion Watch S",
+      category: "Носимые устройства",
+      description: "Часы с GPS, пульсометром и поддержкой уведомлений со смартфона.",
+      price: 18990,
+      stock: 12
+    },
+    {
+      id: nanoid(6),
+      title: "Портативная колонка Sonic Mini",
+      category: "Аудио",
+      description: "Компактная Bluetooth-колонка с защитой от влаги IPX7.",
+      price: 6990,
+      stock: 17
+    },
+    {
+      id: nanoid(6),
+      title: "Внешний SSD FlashCore 1TB",
+      category: "Накопители",
+      description: "Скоростной USB-C SSD для резервных копий и работы с видео.",
+      price: 12990,
+      stock: 20
+    }
+  ];
+}
+
+let products = createSeedProducts();
 
 app.use((req, res, next) => {
   res.on("finish", () => {
     console.log(`[${new Date().toISOString()}] [${req.method}] ${res.statusCode} ${req.path}`);
 
-    if (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") {
+    if (req.method === "POST" || req.method === "PATCH") {
       console.log("Body:", req.body);
     }
   });
@@ -110,121 +113,149 @@ app.use((req, res, next) => {
   next();
 });
 
-function findPropertyOr404(id, res) {
-  const property = properties.find((p) => p.id == id);
-
-  if (!property) {
-    res.status(404).json({ error: "Объект недвижимости не найден" });
-    return null;
+function validateTextField(value, fieldLabel) {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return `${fieldLabel} обязательно`;
   }
 
-  return property;
+  return null;
 }
 
-app.post("/api/properties", (req, res) => {
-  const { name, category, description, price, stock } = req.body;
-
-  if (!name || !category || !description || price === undefined || stock === undefined) {
-    return res.status(400).json({ error: "Все поля обязательны" });
-  }
-
-  const parsedPrice = Number(price);
-  const parsedStock = Number(stock);
-
-  if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
-    return res.status(400).json({ error: "Цена должна быть положительным числом" });
-  }
-
-  if (!Number.isInteger(parsedStock) || parsedStock < 0) {
-    return res.status(400).json({ error: "Количество на складе должно быть целым числом от 0" });
-  }
-
-  const newProperty = {
-    id: nanoid(6),
-    name: String(name).trim(),
-    category: String(category).trim(),
-    description: String(description).trim(),
-    price: parsedPrice,
-    stock: parsedStock
+function normalizeProductPayload(payload) {
+  return {
+    title: payload.title !== undefined ? String(payload.title).trim() : undefined,
+    category: payload.category !== undefined ? String(payload.category).trim() : undefined,
+    description: payload.description !== undefined ? String(payload.description).trim() : undefined,
+    price: payload.price !== undefined ? Number(payload.price) : undefined,
+    stock: payload.stock !== undefined ? Number(payload.stock) : undefined
   };
+}
 
-  properties.push(newProperty);
-  res.status(201).json(newProperty);
-});
+function validateProductPayload(payload, { partial = false } = {}) {
+  const normalized = normalizeProductPayload(payload);
 
-app.get("/api/properties", (req, res) => {
-  res.json(properties);
-});
+  if (!partial) {
+    const requiredFields = ["title", "category", "description", "price", "stock"];
+    const hasMissingField = requiredFields.some((field) => normalized[field] === undefined);
 
-app.get("/api/properties/:id", (req, res) => {
-  const property = findPropertyOr404(req.params.id, res);
+    if (hasMissingField) {
+      return { error: "Все поля обязательны" };
+    }
+  } else {
+    const hasNoFields =
+      normalized.title === undefined &&
+      normalized.category === undefined &&
+      normalized.description === undefined &&
+      normalized.price === undefined &&
+      normalized.stock === undefined;
 
-  if (!property) {
-    return;
+    if (hasNoFields) {
+      return { error: "Нет данных для обновления" };
+    }
   }
 
-  res.json(property);
-});
+  if (normalized.title !== undefined) {
+    const error = validateTextField(normalized.title, "Название товара");
+    if (error) {
+      return { error };
+    }
+  }
 
-app.patch("/api/properties/:id", (req, res) => {
-  const property = findPropertyOr404(req.params.id, res);
+  if (normalized.category !== undefined) {
+    const error = validateTextField(normalized.category, "Категория");
+    if (error) {
+      return { error };
+    }
+  }
 
-  if (!property) {
-    return;
+  if (normalized.description !== undefined) {
+    const error = validateTextField(normalized.description, "Описание");
+    if (error) {
+      return { error };
+    }
+  }
+
+  if (normalized.price !== undefined && (!Number.isFinite(normalized.price) || normalized.price <= 0)) {
+    return { error: "Цена должна быть положительным числом" };
   }
 
   if (
-    req.body?.name === undefined &&
-    req.body?.category === undefined &&
-    req.body?.description === undefined &&
-    req.body?.price === undefined &&
-    req.body?.stock === undefined
+    normalized.stock !== undefined &&
+    (!Number.isInteger(normalized.stock) || normalized.stock < 0)
   ) {
-    return res.status(400).json({ error: "Нет данных для обновления" });
+    return { error: "Количество на складе должно быть целым числом от 0" };
   }
 
-  const { name, category, description, price, stock } = req.body;
+  return { value: normalized };
+}
 
-  if (name !== undefined) {
-    property.name = String(name).trim();
+function findProductOr404(id, res) {
+  const product = products.find((item) => item.id === id);
+
+  if (!product) {
+    res.status(404).json({ error: "Товар не найден" });
+    return null;
   }
 
-  if (category !== undefined) {
-    property.category = String(category).trim();
-  }
+  return product;
+}
 
-  if (description !== undefined) {
-    property.description = String(description).trim();
-  }
-
-  if (price !== undefined) {
-    const parsedPrice = Number(price);
-    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
-      return res.status(400).json({ error: "Цена должна быть положительным числом" });
-    }
-    property.price = parsedPrice;
-  }
-
-  if (stock !== undefined) {
-    const parsedStock = Number(stock);
-    if (!Number.isInteger(parsedStock) || parsedStock < 0) {
-      return res.status(400).json({ error: "Количество на складе должно быть целым числом от 0" });
-    }
-    property.stock = parsedStock;
-  }
-
-  res.json(property);
+app.get("/api/products", (req, res) => {
+  res.json(products);
 });
 
-app.delete("/api/properties/:id", (req, res) => {
-  const exists = properties.some((p) => p.id === req.params.id);
+app.get("/api/products/:id", (req, res) => {
+  const product = findProductOr404(req.params.id, res);
 
-  if (!exists) {
-    return res.status(404).json({ error: "Объект недвижимости не найден" });
+  if (!product) {
+    return;
   }
 
-  properties = properties.filter((p) => p.id !== req.params.id);
-  res.status(204).send();
+  res.json(product);
+});
+
+app.post("/api/products", (req, res) => {
+  const result = validateProductPayload(req.body);
+
+  if (result.error) {
+    return res.status(400).json({ error: result.error });
+  }
+
+  const newProduct = {
+    id: nanoid(6),
+    ...result.value
+  };
+
+  products.push(newProduct);
+  return res.status(201).json(newProduct);
+});
+
+app.patch("/api/products/:id", (req, res) => {
+  const product = findProductOr404(req.params.id, res);
+
+  if (!product) {
+    return;
+  }
+
+  const result = validateProductPayload(req.body, { partial: true });
+
+  if (result.error) {
+    return res.status(400).json({ error: result.error });
+  }
+
+  Object.assign(product, result.value);
+  return res.json(product);
+});
+
+app.delete("/api/products/:id", (req, res) => {
+  const productExists = products.some((item) => item.id === req.params.id);
+
+  if (!productExists) {
+    return res.status(404).json({ error: "Товар не найден" });
+  }
+
+  products = products.filter((item) => item.id !== req.params.id);
+  return res.status(204).send();
 });
 
 app.use((req, res) => {

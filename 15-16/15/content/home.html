@@ -1,0 +1,17 @@
+<div class="home-content">
+  <h2>Главная</h2>
+  <p class="lead">Заметки загружаются внутри App Shell. Оболочка приложения работает из кэша, а содержимое страницы обновляется через сеть.</p>
+
+  <form id="note-form" class="note-form">
+    <label class="sr-only" for="note-input">Текст заметки</label>
+    <input id="note-input" type="text" placeholder="Новая заметка" autocomplete="off" required>
+    <button type="submit">Добавить</button>
+  </form>
+
+  <div class="list-header">
+    <h2>Список заметок</h2>
+    <button id="clear-notes" class="secondary" type="button">Очистить</button>
+  </div>
+  <ul id="notes-list" class="notes-list"></ul>
+  <p id="empty-state" class="empty-state">Пока нет заметок.</p>
+</div>

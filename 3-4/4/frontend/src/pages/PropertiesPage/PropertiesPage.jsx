@@ -1,28 +1,28 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./PropertiesPage.css";
 import PropertiesList from "../../components/PropertiesList";
 import PropertyModal from "../../components/PropertyModal";
 import { api } from "../../api";
 
 export default function PropertiesPage() {
-  const [properties, setProperties] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("create");
-  const [editingProperty, setEditingProperty] = useState(null);
+  const [editingProduct, setEditingProduct] = useState(null);
 
   useEffect(() => {
-    loadProperties();
+    loadProducts();
   }, []);
 
-  const loadProperties = async () => {
+  const loadProducts = async () => {
     try {
       setLoading(true);
-      const data = await api.getProperties();
-      setProperties(data);
+      const data = await api.getProducts();
+      setProducts(data);
     } catch (error) {
       console.error(error);
-      alert("Ошибка загрузки объектов");
+      alert("Ошибка загрузки товаров");
     } finally {
       setLoading(false);
     }
@@ -30,50 +30,50 @@ export default function PropertiesPage() {
 
   const openCreate = () => {
     setModalMode("create");
-    setEditingProperty(null);
+    setEditingProduct(null);
     setModalOpen(true);
   };
 
-  const openEdit = (property) => {
+  const openEdit = (product) => {
     setModalMode("edit");
-    setEditingProperty(property);
+    setEditingProduct(product);
     setModalOpen(true);
   };
 
   const closeModal = () => {
     setModalOpen(false);
-    setEditingProperty(null);
+    setEditingProduct(null);
   };
 
   const handleDelete = async (id) => {
-    const ok = window.confirm("Удалить объект недвижимости?");
+    const ok = window.confirm("Удалить товар?");
     if (!ok) return;
 
     try {
-      await api.deleteProperty(id);
-      setProperties((prev) => prev.filter((item) => item.id !== id));
+      await api.deleteProduct(id);
+      setProducts((prev) => prev.filter((item) => item.id !== id));
     } catch (error) {
       console.error(error);
-      alert("Ошибка удаления объекта");
+      alert("Ошибка удаления товара");
     }
   };
 
   const handleSubmitModal = async (payload) => {
     try {
       if (modalMode === "create") {
-        const newProperty = await api.createProperty(payload);
-        setProperties((prev) => [...prev, newProperty]);
+        const newProduct = await api.createProduct(payload);
+        setProducts((prev) => [...prev, newProduct]);
       } else {
-        const updatedProperty = await api.updateProperty(payload.id, payload);
-        setProperties((prev) =>
-          prev.map((item) => (item.id === payload.id ? updatedProperty : item))
+        const updatedProduct = await api.updateProduct(payload.id, payload);
+        setProducts((prev) =>
+          prev.map((item) => (item.id === payload.id ? updatedProduct : item))
         );
       }
 
       closeModal();
     } catch (error) {
       console.error(error);
-      alert("Ошибка сохранения объекта");
+      alert("Ошибка сохранения товара");
     }
   };
 
@@ -81,7 +81,7 @@ export default function PropertiesPage() {
     <div className="page">
       <header className="header">
         <div className="header__inner">
-          <div className="brand">Real Estate App</div>
+          <div className="brand">Electro Store</div>
           <div className="header__right">React + Express</div>
         </div>
       </header>
@@ -89,28 +89,28 @@ export default function PropertiesPage() {
       <main className="main">
         <div className="container">
           <div className="toolbar">
-            <h1 className="title">Объекты недвижимости</h1>
+            <h1 className="title">Товары интернет-магазина</h1>
             <button className="btn btn--primary" onClick={openCreate}>
-              + Создать
+              + Добавить товар
             </button>
           </div>
 
           {loading ? (
             <div className="empty">Загрузка...</div>
           ) : (
-            <PropertiesList properties={properties} onEdit={openEdit} onDelete={handleDelete} />
+            <PropertiesList products={products} onEdit={openEdit} onDelete={handleDelete} />
           )}
         </div>
       </main>
 
       <footer className="footer">
-        <div className="footer__inner">© {new Date().getFullYear()} Real Estate App</div>
+        <div className="footer__inner">© {new Date().getFullYear()} Electro Store</div>
       </footer>
 
       <PropertyModal
         open={modalOpen}
         mode={modalMode}
-        initialProperty={editingProperty}
+        initialProduct={editingProduct}
         onClose={closeModal}
         onSubmit={handleSubmitModal}
       />

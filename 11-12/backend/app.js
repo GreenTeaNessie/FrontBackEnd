@@ -1,224 +1,178 @@
 const express = require("express");
 const cors = require("cors");
-const crypto = require("crypto");
-const fs = require("fs");
-const path = require("path");
+const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { nanoid } = require("nanoid");
 
 const app = express();
-const PORT = process.env.PORT || 3002;
-
-const PASSWORDS_FILE = path.join(__dirname, "passwords.json");
-
-function hashPassword(password) {
-  return crypto.createHash("sha256").update(password).digest("hex");
-}
-
-function loadPasswords() {
-  try {
-    return JSON.parse(fs.readFileSync(PASSWORDS_FILE, "utf8"));
-  } catch {
-    return {};
-  }
-}
-
-function savePasswords(store) {
-  fs.writeFileSync(PASSWORDS_FILE, JSON.stringify(store, null, 2), "utf8");
-}
-
-const passwords = loadPasswords();
+const port = process.env.PORT || 3002;
 
 const ACCESS_SECRET = process.env.ACCESS_SECRET || "practice_11_12_access_secret";
 const REFRESH_SECRET = process.env.REFRESH_SECRET || "practice_11_12_refresh_secret";
 const ACCESS_EXPIRES_IN = "15m";
 const REFRESH_EXPIRES_IN = "7d";
-const ALLOWED_ROLES = ["user", "seller", "admin"];
+const AVAILABLE_ROLES = ["user", "seller", "admin"];
 
 app.use(
   cors({
-    origin: ["http://localhost:3003"],
-    credentials: true
+    origin: "http://localhost:3003",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-refresh-token"]
   })
 );
 app.use(express.json());
 
-function createUser(username, password, role) {
-  const id = nanoid(8);
-  passwords[username] = hashPassword(password);
-  return {
-    id,
-    username,
-    role,
-    isBlocked: false,
-    createdAt: new Date().toISOString()
-  };
+function createSeedProducts() {
+  return [
+    {
+      id: nanoid(6),
+      title: "Ноутбук NovaBook Air 14",
+      category: "Ноутбуки",
+      description: "Легкий ноутбук для учебы и работы с SSD 512 ГБ.",
+      price: 74990
+    },
+    {
+      id: nanoid(6),
+      title: "Смартфон Pulse X12",
+      category: "Смартфоны",
+      description: "Смартфон с AMOLED-дисплеем, камерой 50 Мп и быстрой зарядкой.",
+      price: 42990
+    },
+    {
+      id: nanoid(6),
+      title: "Планшет ViewTab 11",
+      category: "Планшеты",
+      description: "Планшет для мультимедиа и заметок с поддержкой стилуса.",
+      price: 36990
+    },
+    {
+      id: nanoid(6),
+      title: "Монитор PixelView 27",
+      category: "Мониторы",
+      description: "27-дюймовый IPS-монитор с частотой обновления 144 Гц.",
+      price: 28990
+    },
+    {
+      id: nanoid(6),
+      title: "Беспроводные наушники SoundBeat One",
+      category: "Аудио",
+      description: "Полноразмерные наушники с шумоподавлением и автономностью до 40 часов.",
+      price: 15990
+    }
+  ];
 }
 
-const users = [
-  createUser("admin", "admin123", "admin"),
-  createUser("realtor", "realtor123", "seller"),
-  createUser("buyer", "buyer123", "user")
-];
-
-savePasswords(passwords);
-
+let users = [];
+let products = createSeedProducts();
 const refreshTokens = new Map();
-const properties = [
-  {
-    id: nanoid(8),
-    title: "Семейная трехкомнатная квартира",
-    propertyType: "Квартира",
-    address: "Москва, ул. Архитектора Щусева, 5к2",
-    description: "Просторная квартира в современном ЖК, рядом школа, парк и метро.",
-    price: 24300000,
-    area: 86,
-    agentId: users[1].id,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: nanoid(8),
-    title: "Дом у леса с террасой",
-    propertyType: "Дом",
-    address: "Московская область, Истра, Сосновая, 11",
-    description: "Дом для круглогодичного проживания с участком, террасой и баней.",
-    price: 31900000,
-    area: 164,
-    agentId: users[0].id,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+
+app.use((req, res, next) => {
+  res.on("finish", () => {
+    console.log(`[${new Date().toISOString()}] [${req.method}] ${res.statusCode} ${req.path}`);
+
+    if (req.method === "POST" || req.method === "PUT") {
+      console.log("Body:", req.body);
+    }
+  });
+
+  next();
+});
+
+function isValidEmail(email) {
+  return typeof email === "string" && email.includes("@") && email.trim().length >= 5;
+}
+
+function validateTextField(value, label) {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return `${label} обязательно`;
   }
-];
 
-function sanitizeUser(user) {
-  return {
-    id: user.id,
-    username: user.username,
-    role: user.role,
-    isBlocked: user.isBlocked,
-    createdAt: user.createdAt
-  };
+  return null;
 }
 
-function enrichProperty(property) {
-  const agent = users.find((user) => user.id === property.agentId);
+function validateProductPayload(payload) {
+  const title = payload.title !== undefined ? String(payload.title).trim() : "";
+  const category = payload.category !== undefined ? String(payload.category).trim() : "";
+  const description = payload.description !== undefined ? String(payload.description).trim() : "";
+  const price = payload.price !== undefined ? Number(payload.price) : Number.NaN;
 
-  return {
-    ...property,
-    agentUsername: agent ? agent.username : "agency-admin"
-  };
-}
+  const textErrors = [
+    validateTextField(title, "Название товара"),
+    validateTextField(category, "Категория"),
+    validateTextField(description, "Описание")
+  ].filter(Boolean);
 
-function normalizeRole(value) {
-  const role = String(value || "user").trim().toLowerCase();
-  return ALLOWED_ROLES.includes(role) ? role : "";
-}
-
-function normalizePropertyPayload(payload) {
-  const title = String(payload.title || "").trim();
-  const propertyType = String(payload.propertyType || "").trim();
-  const address = String(payload.address || "").trim();
-  const description = String(payload.description || "").trim();
-  const imageUrl = String(payload.imageUrl || "").trim();
-  const price = Number(payload.price);
-  const area = Number(payload.area);
-
-  if (!title || !propertyType || !address || !description) {
-    return { error: "title, propertyType, address and description are required" };
+  if (textErrors.length > 0) {
+    return { error: textErrors[0] };
   }
 
   if (!Number.isFinite(price) || price <= 0) {
-    return { error: "price must be a positive number" };
-  }
-
-  if (!Number.isFinite(area) || area <= 0) {
-    return { error: "area must be a positive number" };
+    return { error: "Цена должна быть положительным числом" };
   }
 
   return {
     value: {
       title,
-      propertyType,
-      address,
+      category,
       description,
-      imageUrl,
-      price,
-      area
+      price
     }
   };
 }
 
-function extractRefreshToken(req) {
-  const headerToken =
-    req.headers["x-refresh-token"] ||
-    req.headers["refresh-token"] ||
-    req.headers["x-token-refresh"];
-
-  if (headerToken) {
-    return String(headerToken).trim();
-  }
-
-  const { refreshToken } = req.body || {};
-  return refreshToken ? String(refreshToken).trim() : "";
-}
-
-function generateAccessToken(user) {
-  return jwt.sign(
-    {
-      sub: user.id,
-      username: user.username,
-      role: user.role
-    },
-    ACCESS_SECRET,
-    {
-      expiresIn: ACCESS_EXPIRES_IN
-    }
-  );
-}
-
-function generateRefreshToken(user) {
-  return jwt.sign(
-    {
-      sub: user.id,
-      username: user.username,
-      role: user.role
-    },
-    REFRESH_SECRET,
-    {
-      expiresIn: REFRESH_EXPIRES_IN
-    }
-  );
+function sanitizeUser(user) {
+  return {
+    id: user.id,
+    email: user.email,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    role: user.role,
+    isBlocked: user.isBlocked
+  };
 }
 
 function issueTokens(user) {
-  const accessToken = generateAccessToken(user);
-  const refreshToken = generateRefreshToken(user);
+  const accessToken = jwt.sign(
+    {
+      sub: user.id,
+      email: user.email,
+      role: user.role
+    },
+    ACCESS_SECRET,
+    { expiresIn: ACCESS_EXPIRES_IN }
+  );
+
+  const refreshToken = jwt.sign(
+    {
+      sub: user.id
+    },
+    REFRESH_SECRET,
+    { expiresIn: REFRESH_EXPIRES_IN }
+  );
 
   refreshTokens.set(refreshToken, user.id);
 
-  return {
-    accessToken,
-    refreshToken
-  };
+  return { accessToken, refreshToken };
 }
 
-function revokeUserRefreshTokens(userId) {
-  for (const [token, currentUserId] of refreshTokens.entries()) {
-    if (currentUserId === userId) {
+function revokeUserSessions(userId) {
+  for (const [token, sessionUserId] of refreshTokens.entries()) {
+    if (sessionUserId === userId) {
       refreshTokens.delete(token);
     }
   }
 }
 
+function extractRefreshToken(req) {
+  return req.headers["x-refresh-token"] || req.body?.refreshToken || "";
+}
+
 function authMiddleware(req, res, next) {
-  const header = req.headers.authorization || "";
-  const [scheme, token] = header.split(" ");
+  const authorization = req.headers.authorization || "";
+  const [scheme, token] = authorization.split(" ");
 
   if (scheme !== "Bearer" || !token) {
-    return res.status(401).json({
-      error: "Missing or invalid Authorization header"
-    });
+    return res.status(401).json({ error: "Требуется Bearer token" });
   }
 
   try {
@@ -226,37 +180,93 @@ function authMiddleware(req, res, next) {
     const user = users.find((item) => item.id === payload.sub);
 
     if (!user) {
-      return res.status(401).json({
-        error: "User not found"
-      });
+      return res.status(401).json({ error: "Пользователь не найден" });
     }
 
     if (user.isBlocked) {
-      revokeUserRefreshTokens(user.id);
-      return res.status(403).json({
-        error: "User is blocked"
-      });
+      return res.status(403).json({ error: "Пользователь заблокирован" });
     }
 
-    req.user = user;
-    next();
+    req.auth = payload;
+    req.currentUser = user;
+    return next();
   } catch (error) {
-    return res.status(401).json({
-      error: "Invalid or expired token"
-    });
+    return res.status(401).json({ error: "Токен недействителен или истек" });
   }
 }
 
-function roleMiddleware(allowedRoles) {
+function requireRoles(...roles) {
   return (req, res, next) => {
-    if (!req.user || !allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({
-        error: "Forbidden"
-      });
+    if (!roles.includes(req.currentUser.role)) {
+      return res.status(403).json({ error: "Недостаточно прав" });
     }
 
-    next();
+    return next();
   };
+}
+
+function findProductOr404(id, res) {
+  const product = products.find((item) => item.id === id);
+
+  if (!product) {
+    res.status(404).json({ error: "Товар не найден" });
+    return null;
+  }
+
+  return product;
+}
+
+function findUserOr404(id, res) {
+  const user = users.find((item) => item.id === id);
+
+  if (!user) {
+    res.status(404).json({ error: "Пользователь не найден" });
+    return null;
+  }
+
+  return user;
+}
+
+async function seedDemoUsers() {
+  const demoUsers = [
+    {
+      email: "admin@electro.local",
+      first_name: "Системный",
+      last_name: "Администратор",
+      password: "Admin1234",
+      role: "admin"
+    },
+    {
+      email: "seller@electro.local",
+      first_name: "Мария",
+      last_name: "Продавец",
+      password: "Seller1234",
+      role: "seller"
+    },
+    {
+      email: "user@electro.local",
+      first_name: "Илья",
+      last_name: "Покупатель",
+      password: "User1234",
+      role: "user"
+    }
+  ];
+
+  const seededUsers = [];
+
+  for (const demoUser of demoUsers) {
+    seededUsers.push({
+      id: nanoid(6),
+      email: demoUser.email,
+      first_name: demoUser.first_name,
+      last_name: demoUser.last_name,
+      passwordHash: await bcrypt.hash(demoUser.password, 10),
+      role: demoUser.role,
+      isBlocked: false
+    });
+  }
+
+  users = seededUsers;
 }
 
 app.get("/api/health", (req, res) => {
@@ -264,102 +274,79 @@ app.get("/api/health", (req, res) => {
 });
 
 app.post("/api/auth/register", async (req, res) => {
-  const username = String(req.body.username || "").trim();
-  const password = String(req.body.password || "").trim();
-  const role = normalizeRole(req.body.role || "user");
+  const { email, first_name, last_name, password } = req.body;
 
-  if (!username || !password) {
-    return res.status(400).json({
-      error: "username and password are required"
-    });
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ error: "Некорректный email" });
   }
 
-  if (!role) {
-    return res.status(400).json({
-      error: "role must be user, seller or admin"
-    });
+  const firstNameError = validateTextField(first_name, "Имя");
+  const lastNameError = validateTextField(last_name, "Фамилия");
+
+  if (firstNameError || lastNameError) {
+    return res.status(400).json({ error: firstNameError || lastNameError });
   }
 
-  if (password.length < 4) {
-    return res.status(400).json({
-      error: "password must contain at least 4 characters"
-    });
+  if (typeof password !== "string" || password.length < 6) {
+    return res.status(400).json({ error: "Пароль должен содержать минимум 6 символов" });
   }
 
-  const exists = users.some((user) => user.username === username);
-  if (exists) {
-    return res.status(409).json({
-      error: "username already exists"
-    });
-  }
+  const normalizedEmail = email.trim().toLowerCase();
 
-  passwords[username] = hashPassword(password);
-  savePasswords(passwords);
+  if (users.some((user) => user.email === normalizedEmail)) {
+    return res.status(409).json({ error: "Пользователь с таким email уже существует" });
+  }
 
   const user = {
-    id: nanoid(8),
-    username,
-    role,
-    isBlocked: false,
-    createdAt: new Date().toISOString()
+    id: nanoid(6),
+    email: normalizedEmail,
+    first_name: first_name.trim(),
+    last_name: last_name.trim(),
+    passwordHash: await bcrypt.hash(password, 10),
+    role: "user",
+    isBlocked: false
   };
 
   users.push(user);
-
   return res.status(201).json(sanitizeUser(user));
 });
 
-app.post("/api/auth/login", (req, res) => {
-  const username = String(req.body.username || "").trim();
-  const password = String(req.body.password || "").trim();
+app.post("/api/auth/login", async (req, res) => {
+  const { email, password } = req.body;
 
-  if (!username || !password) {
-    return res.status(400).json({
-      error: "username and password are required"
-    });
+  if (!isValidEmail(email) || typeof password !== "string") {
+    return res.status(400).json({ error: "Требуются email и password" });
   }
 
-  const user = users.find((item) => item.username === username);
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = users.find((item) => item.email === normalizedEmail);
+
   if (!user) {
-    return res.status(401).json({
-      error: "Invalid credentials"
-    });
+    return res.status(401).json({ error: "Неверный email или пароль" });
   }
 
   if (user.isBlocked) {
-    return res.status(403).json({
-      error: "User is blocked"
-    });
+    return res.status(403).json({ error: "Пользователь заблокирован" });
   }
 
-  const isValidPassword = hashPassword(password) === passwords[user.username];
-  if (!isValidPassword) {
-    return res.status(401).json({
-      error: "Invalid credentials"
-    });
+  const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+
+  if (!isPasswordValid) {
+    return res.status(401).json({ error: "Неверный email или пароль" });
   }
 
-  const tokens = issueTokens(user);
-
-  return res.json({
-    ...tokens,
-    user: sanitizeUser(user)
-  });
+  return res.json(issueTokens(user));
 });
 
 app.post("/api/auth/refresh", (req, res) => {
   const refreshToken = extractRefreshToken(req);
 
   if (!refreshToken) {
-    return res.status(400).json({
-      error: "refreshToken is required"
-    });
+    return res.status(400).json({ error: "Refresh token не передан" });
   }
 
   if (!refreshTokens.has(refreshToken)) {
-    return res.status(401).json({
-      error: "Invalid refresh token"
-    });
+    return res.status(401).json({ error: "Refresh token не найден" });
   }
 
   try {
@@ -368,248 +355,216 @@ app.post("/api/auth/refresh", (req, res) => {
 
     if (!user) {
       refreshTokens.delete(refreshToken);
-      return res.status(401).json({
-        error: "User not found"
-      });
+      return res.status(401).json({ error: "Пользователь не найден" });
     }
 
     if (user.isBlocked) {
       refreshTokens.delete(refreshToken);
-      revokeUserRefreshTokens(user.id);
-      return res.status(403).json({
-        error: "User is blocked"
-      });
+      return res.status(403).json({ error: "Пользователь заблокирован" });
     }
 
     refreshTokens.delete(refreshToken);
-    const tokens = issueTokens(user);
-
-    return res.json(tokens);
+    return res.json(issueTokens(user));
   } catch (error) {
     refreshTokens.delete(refreshToken);
-    return res.status(401).json({
-      error: "Invalid or expired refresh token"
-    });
+    return res.status(401).json({ error: "Refresh token недействителен или истек" });
   }
 });
 
 app.get("/api/auth/me", authMiddleware, (req, res) => {
-  return res.json(sanitizeUser(req.user));
+  return res.json(sanitizeUser(req.currentUser));
 });
 
-app.get("/api/users", authMiddleware, roleMiddleware(["admin"]), (req, res) => {
-  return res.json(users.map(sanitizeUser));
+app.get("/api/products", authMiddleware, requireRoles("user", "seller", "admin"), (req, res) => {
+  res.json(products);
 });
 
-app.get("/api/users/:id", authMiddleware, roleMiddleware(["admin"]), (req, res) => {
-  const user = users.find((item) => item.id === req.params.id);
+app.get("/api/products/:id", authMiddleware, requireRoles("user", "seller", "admin"), (req, res) => {
+  const product = findProductOr404(req.params.id, res);
+
+  if (!product) {
+    return;
+  }
+
+  return res.json(product);
+});
+
+app.post("/api/products", authMiddleware, requireRoles("seller", "admin"), (req, res) => {
+  const result = validateProductPayload(req.body);
+
+  if (result.error) {
+    return res.status(400).json({ error: result.error });
+  }
+
+  const product = {
+    id: nanoid(6),
+    ...result.value
+  };
+
+  products.push(product);
+  return res.status(201).json(product);
+});
+
+app.put("/api/products/:id", authMiddleware, requireRoles("seller", "admin"), (req, res) => {
+  const product = findProductOr404(req.params.id, res);
+
+  if (!product) {
+    return;
+  }
+
+  const result = validateProductPayload(req.body);
+
+  if (result.error) {
+    return res.status(400).json({ error: result.error });
+  }
+
+  Object.assign(product, result.value);
+  return res.json(product);
+});
+
+app.delete("/api/products/:id", authMiddleware, requireRoles("admin"), (req, res) => {
+  const exists = products.some((item) => item.id === req.params.id);
+
+  if (!exists) {
+    return res.status(404).json({ error: "Товар не найден" });
+  }
+
+  products = products.filter((item) => item.id !== req.params.id);
+  return res.status(204).send();
+});
+
+app.get("/api/users", authMiddleware, requireRoles("admin"), (req, res) => {
+  res.json(users.map(sanitizeUser));
+});
+
+app.get("/api/users/:id", authMiddleware, requireRoles("admin"), (req, res) => {
+  const user = findUserOr404(req.params.id, res);
 
   if (!user) {
-    return res.status(404).json({
-      error: "User not found"
-    });
+    return;
   }
 
   return res.json(sanitizeUser(user));
 });
 
-app.put("/api/users/:id", authMiddleware, roleMiddleware(["admin"]), (req, res) => {
-  const user = users.find((item) => item.id === req.params.id);
+app.put("/api/users/:id", authMiddleware, requireRoles("admin"), (req, res) => {
+  const user = findUserOr404(req.params.id, res);
 
   if (!user) {
-    return res.status(404).json({
-      error: "User not found"
-    });
+    return;
   }
 
-  const nextUsername = req.body.username ? String(req.body.username).trim() : user.username;
-  const nextRole = req.body.role ? normalizeRole(req.body.role) : user.role;
-  const nextBlocked =
-    typeof req.body.isBlocked === "boolean" ? req.body.isBlocked : user.isBlocked;
+  const updates = {};
+  const { email, first_name, last_name, role, isBlocked } = req.body;
 
-  if (!nextUsername) {
-    return res.status(400).json({
-      error: "username is required"
-    });
+  if (
+    email === undefined &&
+    first_name === undefined &&
+    last_name === undefined &&
+    role === undefined &&
+    isBlocked === undefined
+  ) {
+    return res.status(400).json({ error: "Нет данных для обновления" });
   }
 
-  if (!nextRole) {
-    return res.status(400).json({
-      error: "role must be user, seller or admin"
-    });
+  if (email !== undefined) {
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: "Некорректный email" });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const duplicate = users.find((item) => item.email === normalizedEmail && item.id !== user.id);
+
+    if (duplicate) {
+      return res.status(409).json({ error: "Пользователь с таким email уже существует" });
+    }
+
+    updates.email = normalizedEmail;
   }
 
-  const usernameTaken = users.some(
-    (item) => item.id !== user.id && item.username === nextUsername
-  );
-
-  if (usernameTaken) {
-    return res.status(409).json({
-      error: "username already exists"
-    });
+  if (first_name !== undefined) {
+    const error = validateTextField(first_name, "Имя");
+    if (error) {
+      return res.status(400).json({ error });
+    }
+    updates.first_name = first_name.trim();
   }
 
-  if (user.id === req.user.id && nextBlocked) {
-    return res.status(400).json({
-      error: "You cannot block yourself"
-    });
+  if (last_name !== undefined) {
+    const error = validateTextField(last_name, "Фамилия");
+    if (error) {
+      return res.status(400).json({ error });
+    }
+    updates.last_name = last_name.trim();
   }
 
-  user.username = nextUsername;
-  user.role = nextRole;
-  user.isBlocked = nextBlocked;
+  if (role !== undefined) {
+    if (!AVAILABLE_ROLES.includes(role)) {
+      return res.status(400).json({ error: "Недопустимая роль" });
+    }
 
-  if (user.isBlocked) {
-    revokeUserRefreshTokens(user.id);
+    if (req.currentUser.id === user.id && role !== user.role) {
+      return res.status(400).json({ error: "Администратор не может менять собственную роль" });
+    }
+
+    updates.role = role;
+  }
+
+  if (isBlocked !== undefined) {
+    if (typeof isBlocked !== "boolean") {
+      return res.status(400).json({ error: "isBlocked должен быть boolean" });
+    }
+
+    if (req.currentUser.id === user.id && isBlocked) {
+      return res.status(400).json({ error: "Администратор не может заблокировать самого себя" });
+    }
+
+    updates.isBlocked = isBlocked;
+  }
+
+  Object.assign(user, updates);
+
+  if (updates.isBlocked === true) {
+    revokeUserSessions(user.id);
   }
 
   return res.json(sanitizeUser(user));
 });
 
-app.delete("/api/users/:id", authMiddleware, roleMiddleware(["admin"]), (req, res) => {
-  const user = users.find((item) => item.id === req.params.id);
+app.delete("/api/users/:id", authMiddleware, requireRoles("admin"), (req, res) => {
+  const user = findUserOr404(req.params.id, res);
 
   if (!user) {
-    return res.status(404).json({
-      error: "User not found"
-    });
+    return;
   }
 
-  if (user.id === req.user.id) {
-    return res.status(400).json({
-      error: "You cannot block yourself"
-    });
+  if (req.currentUser.id === user.id) {
+    return res.status(400).json({ error: "Администратор не может заблокировать самого себя" });
   }
 
   user.isBlocked = true;
-  revokeUserRefreshTokens(user.id);
-
-  return res.json({
-    message: "User blocked",
-    user: sanitizeUser(user)
-  });
+  revokeUserSessions(user.id);
+  return res.json(sanitizeUser(user));
 });
-
-app.get(
-  "/api/properties",
-  authMiddleware,
-  roleMiddleware(["user", "seller", "admin"]),
-  (req, res) => {
-    return res.json(properties.map(enrichProperty));
-  }
-);
-
-app.post(
-  "/api/properties",
-  authMiddleware,
-  roleMiddleware(["seller", "admin"]),
-  (req, res) => {
-    const normalized = normalizePropertyPayload(req.body || {});
-
-    if (normalized.error) {
-      return res.status(400).json({
-        error: normalized.error
-      });
-    }
-
-    const property = {
-      id: nanoid(8),
-      ...normalized.value,
-      agentId: req.user.id,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    properties.unshift(property);
-
-    return res.status(201).json(enrichProperty(property));
-  }
-);
-
-app.get(
-  "/api/properties/:id",
-  authMiddleware,
-  roleMiddleware(["user", "seller", "admin"]),
-  (req, res) => {
-    const property = properties.find((item) => item.id === req.params.id);
-
-    if (!property) {
-      return res.status(404).json({
-        error: "Property not found"
-      });
-    }
-
-    return res.json(enrichProperty(property));
-  }
-);
-
-app.put(
-  "/api/properties/:id",
-  authMiddleware,
-  roleMiddleware(["seller", "admin"]),
-  (req, res) => {
-    const property = properties.find((item) => item.id === req.params.id);
-
-    if (!property) {
-      return res.status(404).json({
-        error: "Property not found"
-      });
-    }
-
-    const normalized = normalizePropertyPayload(req.body || {});
-
-    if (normalized.error) {
-      return res.status(400).json({
-        error: normalized.error
-      });
-    }
-
-    property.title = normalized.value.title;
-    property.propertyType = normalized.value.propertyType;
-    property.address = normalized.value.address;
-    property.description = normalized.value.description;
-    property.imageUrl = normalized.value.imageUrl;
-    property.price = normalized.value.price;
-    property.area = normalized.value.area;
-    property.updatedAt = new Date().toISOString();
-
-    return res.json(enrichProperty(property));
-  }
-);
-
-app.delete(
-  "/api/properties/:id",
-  authMiddleware,
-  roleMiddleware(["admin"]),
-  (req, res) => {
-    const index = properties.findIndex((item) => item.id === req.params.id);
-
-    if (index === -1) {
-      return res.status(404).json({
-        error: "Property not found"
-      });
-    }
-
-    properties.splice(index, 1);
-
-    return res.status(204).send();
-  }
-);
 
 app.use((req, res) => {
-  res.status(404).json({
-    error: "Route not found"
-  });
+  res.status(404).json({ error: "Маршрут не найден" });
 });
 
-app.use((error, req, res, next) => {
-  console.error(error);
-  res.status(500).json({
-    error: "Internal server error"
-  });
+app.use((err, req, res, next) => {
+  console.error("Необработанная ошибка:", err);
+  res.status(500).json({ error: "Внутренняя ошибка сервера" });
 });
 
-app.listen(PORT, () => {
-  console.log(`Practice 11-12 backend started on http://localhost:${PORT}`);
-  console.log("Demo users: admin/admin123, realtor/realtor123, buyer/buyer123");
+async function start() {
+  await seedDemoUsers();
+
+  app.listen(port, () => {
+    console.log(`Сервер запущен на http://localhost:${port}`);
+  });
+}
+
+start().catch((error) => {
+  console.error("Не удалось инициализировать приложение:", error);
+  process.exit(1);
 });

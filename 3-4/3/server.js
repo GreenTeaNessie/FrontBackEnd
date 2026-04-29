@@ -1,137 +1,121 @@
-﻿const express = require("express");
+const fs = require("fs");
+const path = require("path");
+const express = require("express");
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
+const envPath = path.join(__dirname, ".env");
 
-app.use(express.json());
+function loadEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) {
+    return {};
+  }
 
-let properties = [
-  { id: 1, name: "Студия 27 м², Мурино", price: 5100000 },
-  { id: 2, name: "2-комнатная 58 м², Кудрово", price: 8900000 },
-  { id: 3, name: "Дом 165 м², Всеволожский район", price: 23500000 }
-];
+  return fs
+    .readFileSync(filePath, "utf8")
+    .split(/\r?\n/)
+    .reduce((accumulator, line) => {
+      const trimmedLine = line.trim();
+
+      if (!trimmedLine || trimmedLine.startsWith("#")) {
+        return accumulator;
+      }
+
+      const separatorIndex = trimmedLine.indexOf("=");
+      if (separatorIndex === -1) {
+        return accumulator;
+      }
+
+      const key = trimmedLine.slice(0, separatorIndex).trim();
+      const value = trimmedLine.slice(separatorIndex + 1).trim();
+
+      accumulator[key] = value;
+      return accumulator;
+    }, {});
+}
+
+const envConfig = loadEnvFile(envPath);
+const exchangeRateApiKey = process.env.EXCHANGE_RATE_API_KEY || envConfig.EXCHANGE_RATE_API_KEY || "";
 
 app.get("/", (req, res) => {
-  res.send("Главная страница — Продажа недвижимости");
+  res.json({
+    message: "Вспомогательный прокси для практического занятия №3",
+    routes: ["GET /health", "GET /api/exchange-rate/:base", "GET /api/exchange-rate/:base?target=RUB"]
+  });
 });
 
-app.get("/exchange-rate/:base", async (req, res) => {
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    exchangeRateApiKeyConfigured: Boolean(exchangeRateApiKey)
+  });
+});
+
+app.get("/api/exchange-rate/:base", async (req, res) => {
   const base = String(req.params.base).toUpperCase();
   const target = req.query.target ? String(req.query.target).toUpperCase() : null;
 
+  if (!exchangeRateApiKey) {
+    return res.status(500).json({
+      error: "Переменная EXCHANGE_RATE_API_KEY не задана"
+    });
+  }
+
   try {
     const response = await fetch(
-      `https://v6.exchangerate-api.com/v6/fc1c85cc10f8981b47399204/latest/${base}`
+      `https://v6.exchangerate-api.com/v6/${exchangeRateApiKey}/latest/${base}`
     );
 
     if (!response.ok) {
-      return res.status(502).json({ error: "Ошибка при обращении к ExchangeRate API" });
+      return res.status(502).json({
+        error: "Ошибка при обращении к ExchangeRate API"
+      });
     }
 
     const data = await response.json();
 
     if (data.result !== "success") {
-      return res.status(502).json({ error: "Некорректный ответ от ExchangeRate API" });
-    }
-
-    if (target) {
-      const rate = data.conversion_rates?.[target];
-
-      if (rate === undefined) {
-        return res.status(400).json({ error: "Валюта не найдена" });
-      }
-
-      return res.json({
-        base: data.base_code,
-        target,
-        rate,
-        updatedAt: data.time_last_update_utc
+      return res.status(502).json({
+        error: "Некорректный ответ от ExchangeRate API",
+        details: data
       });
     }
 
-    res.json(data);
+    if (!target) {
+      return res.json({
+        result: data.result,
+        base: data.base_code,
+        updatedAt: data.time_last_update_utc,
+        conversionRates: data.conversion_rates
+      });
+    }
+
+    const rate = data.conversion_rates?.[target];
+
+    if (rate === undefined) {
+      return res.status(400).json({
+        error: `Валюта ${target} не найдена`
+      });
+    }
+
+    return res.json({
+      base: data.base_code,
+      target,
+      rate,
+      updatedAt: data.time_last_update_utc
+    });
   } catch (error) {
     console.error("Ошибка получения курсов:", error);
-    res.status(500).json({ error: "Не удалось получить курсы валют" });
+    return res.status(500).json({
+      error: "Не удалось получить курсы валют"
+    });
   }
 });
 
-app.get("/properties", (req, res) => {
-  res.json(properties);
-});
-
-app.get("/properties/:id", (req, res) => {
-  const property = properties.find((p) => p.id == req.params.id);
-
-  if (!property) {
-    return res.status(404).json({ error: "Объект недвижимости не найден" });
-  }
-
-  res.json(property);
-});
-
-app.post("/properties", (req, res) => {
-  const { name, price } = req.body;
-
-  if (!name || price === undefined) {
-    return res.status(400).json({ error: "Название и цена обязательны" });
-  }
-
-  const newProperty = {
-    id: Date.now(),
-    name,
-    price: Number(price)
-  };
-
-  properties.push(newProperty);
-  res.status(201).json(newProperty);
-});
-
-app.put("/properties/:id", (req, res) => {
-  const property = properties.find((p) => p.id == req.params.id);
-
-  if (!property) {
-    return res.status(404).json({ error: "Объект недвижимости не найден" });
-  }
-
-  const { name, price } = req.body;
-
-  if (!name || price === undefined) {
-    return res.status(400).json({ error: "Название и цена обязательны" });
-  }
-
-  property.name = name;
-  property.price = Number(price);
-
-  res.json(property);
-});
-
-app.patch("/properties/:id", (req, res) => {
-  const property = properties.find((p) => p.id == req.params.id);
-
-  if (!property) {
-    return res.status(404).json({ error: "Объект недвижимости не найден" });
-  }
-
-  const { name, price } = req.body;
-
-  if (name !== undefined) {
-    property.name = name;
-  }
-
-  if (price !== undefined) {
-    property.price = Number(price);
-  }
-
-  res.json(property);
-});
-
-app.delete("/properties/:id", (req, res) => {
-  properties = properties.filter((p) => p.id != req.params.id);
-  res.send("Ok");
+app.use((req, res) => {
+  res.status(404).json({ error: "Маршрут не найден" });
 });
 
 app.listen(port, () => {
   console.log(`Сервер запущен на http://localhost:${port}`);
 });
-

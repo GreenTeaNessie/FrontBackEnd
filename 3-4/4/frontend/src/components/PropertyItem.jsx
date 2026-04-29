@@ -1,25 +1,25 @@
-﻿import React from "react";
+import React from "react";
 
-export default function PropertyItem({ property, onEdit, onDelete }) {
-  const formattedPrice = Number(property.price).toLocaleString("ru-RU");
+export default function PropertyItem({ product, onEdit, onDelete }) {
+  const formattedPrice = Number(product.price).toLocaleString("ru-RU");
 
   return (
     <div className="propertyRow">
       <div className="propertyMain">
-        <div className="propertyId">#{property.id}</div>
-        <div className="propertyName">{property.name}</div>
-        <div className="propertyCategory">{property.category}</div>
+        <div className="propertyId">#{product.id}</div>
+        <div className="propertyName">{product.title}</div>
+        <div className="propertyCategory">{product.category}</div>
         <div className="propertyPrice">{formattedPrice} ₽</div>
-        <div className="propertyStock">На складе: {property.stock}</div>
+        <div className="propertyStock">На складе: {product.stock}</div>
       </div>
 
-      <p className="propertyDescription">{property.description}</p>
+      <p className="propertyDescription">{product.description}</p>
 
       <div className="propertyActions">
-        <button className="btn" onClick={() => onEdit(property)}>
+        <button className="btn" onClick={() => onEdit(product)}>
           Редактировать
         </button>
-        <button className="btn btn--danger" onClick={() => onDelete(property.id)}>
+        <button className="btn btn--danger" onClick={() => onDelete(product.id)}>
           Удалить
         </button>
       </div>

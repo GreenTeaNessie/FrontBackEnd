@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="icon" href="./icons/favicon-32x32.png" type="image/png">
+  <link rel="stylesheet" href="./style.css">
+  <title>Практика 14 - Web App Manifest</title>
+</head>
+<body>
+  <main class="app-shell">
+    <section class="workspace" aria-labelledby="app-title">
+      <p class="eyebrow">Практика 14</p>
+      <h1 id="app-title">Заметки PWA</h1>
+      <p class="lead">Версия с manifest-файлом, иконками приложения и кэшированием всех PWA-ресурсов.</p>
+
+      <form id="note-form" class="note-form">
+        <label class="sr-only" for="note-input">Текст заметки</label>
+        <input id="note-input" type="text" placeholder="Новая заметка" autocomplete="off" required>
+        <button type="submit">Добавить</button>
+      </form>
+
+      <div class="list-header">
+        <h2>Список заметок</h2>
+        <button id="clear-notes" class="secondary" type="button">Очистить</button>
+      </div>
+      <ul id="notes-list" class="notes-list"></ul>
+      <p id="empty-state" class="empty-state">Пока нет заметок.</p>
+    </section>
+
+    <aside class="status-panel" aria-label="Статус PWA">
+      <span class="status-dot" aria-hidden="true"></span>
+      <strong id="sw-status">Service Worker проверяется</strong>
+      <p>Manifest доступен в DevTools -> Application -> Manifest. Иконки добавлены в Cache Storage.</p>
+    </aside>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>

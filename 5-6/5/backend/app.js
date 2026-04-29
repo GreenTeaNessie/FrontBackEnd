@@ -16,36 +16,199 @@ app.use(
 );
 app.use(express.json());
 
+function createSeedProducts() {
+  return [
+    {
+      id: nanoid(6),
+      title: "Ноутбук NovaBook Air 14",
+      category: "Ноутбуки",
+      description: "Легкий ноутбук для учебы и работы с SSD 512 ГБ и 16 ГБ RAM.",
+      price: 74990,
+      stock: 6
+    },
+    {
+      id: nanoid(6),
+      title: "Смартфон Pulse X12",
+      category: "Смартфоны",
+      description: "Смартфон с AMOLED-дисплеем, камерой 50 Мп и быстрой зарядкой.",
+      price: 42990,
+      stock: 18
+    },
+    {
+      id: nanoid(6),
+      title: "Планшет ViewTab 11",
+      category: "Планшеты",
+      description: "Планшет для мультимедиа и заметок с поддержкой стилуса.",
+      price: 36990,
+      stock: 9
+    },
+    {
+      id: nanoid(6),
+      title: "Монитор PixelView 27",
+      category: "Мониторы",
+      description: "27-дюймовый IPS-монитор с частотой обновления 144 Гц.",
+      price: 28990,
+      stock: 11
+    },
+    {
+      id: nanoid(6),
+      title: "Механическая клавиатура KeyForge TKL",
+      category: "Периферия",
+      description: "Компактная клавиатура с RGB-подсветкой и горячей заменой переключателей.",
+      price: 9990,
+      stock: 23
+    },
+    {
+      id: nanoid(6),
+      title: "Игровая мышь Vector Pro",
+      category: "Периферия",
+      description: "Легкая мышь с сенсором 26000 DPI и шестью кнопками.",
+      price: 5490,
+      stock: 30
+    },
+    {
+      id: nanoid(6),
+      title: "Беспроводные наушники SoundBeat One",
+      category: "Аудио",
+      description: "Полноразмерные наушники с шумоподавлением и автономностью до 40 часов.",
+      price: 15990,
+      stock: 14
+    },
+    {
+      id: nanoid(6),
+      title: "Смарт-часы Motion Watch S",
+      category: "Носимые устройства",
+      description: "Часы с GPS, пульсометром и уведомлениями со смартфона.",
+      price: 18990,
+      stock: 12
+    },
+    {
+      id: nanoid(6),
+      title: "Портативная колонка Sonic Mini",
+      category: "Аудио",
+      description: "Bluetooth-колонка с защитой от влаги IPX7 и USB-C.",
+      price: 6990,
+      stock: 17
+    },
+    {
+      id: nanoid(6),
+      title: "Внешний SSD FlashCore 1TB",
+      category: "Накопители",
+      description: "Скоростной внешний SSD для резервных копий и монтажа.",
+      price: 12990,
+      stock: 20
+    }
+  ];
+}
+
+let products = createSeedProducts();
+
 app.use((req, res, next) => {
   res.on("finish", () => {
     console.log(`[${new Date().toISOString()}] [${req.method}] ${res.statusCode} ${req.path}`);
-    if (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") {
+
+    if (req.method === "POST" || req.method === "PATCH") {
       console.log("Body:", req.body);
     }
   });
+
   next();
 });
 
-let properties = [
-  { id: nanoid(6), name: "Студия 27 м², Мурино", category: "Квартира", description: "Компактная студия у метро Девяткино, после ремонта.", price: 5100000, stock: 1 },
-  { id: nanoid(6), name: "2-комнатная 58 м², Кудрово", category: "Квартира", description: "Светлая квартира с кухней-гостиной в новом ЖК.", price: 8900000, stock: 1 },
-  { id: nanoid(6), name: "Апартаменты 42 м², Васильевский остров", category: "Апартаменты", description: "Готовые апартаменты под аренду рядом с набережной.", price: 11200000, stock: 1 },
-  { id: nanoid(6), name: "3-комнатная 86 м², Приморский район", category: "Квартира", description: "Семейная квартира с видом на парк и подземным паркингом.", price: 17400000, stock: 1 },
-  { id: nanoid(6), name: "Таунхаус 120 м², Парголово", category: "Таунхаус", description: "Двухэтажный таунхаус с террасой и собственным участком.", price: 19800000, stock: 1 },
-  { id: nanoid(6), name: "Дом 165 м², Всеволожский район", category: "Дом", description: "Дом для постоянного проживания, участок 8 соток.", price: 23500000, stock: 1 },
-  { id: nanoid(6), name: "Коммерческое помещение 95 м², центр", category: "Коммерция", description: "Первый этаж, высокий пешеходный трафик, витринные окна.", price: 27600000, stock: 1 },
-  { id: nanoid(6), name: "Пентхаус 140 м², Петроградская", category: "Пентхаус", description: "Панорамные окна, терраса 35 м², премиальная отделка.", price: 48900000, stock: 1 },
-  { id: nanoid(6), name: "Участок 12 соток, Репино", category: "Земельный участок", description: "Ровный участок под ИЖС, все коммуникации по границе.", price: 9900000, stock: 1 },
-  { id: nanoid(6), name: "Склад 600 м², Шушары", category: "Склад", description: "Отапливаемый склад класса B, удобный подъезд для фур.", price: 35200000, stock: 1 }
-];
+function validateTextField(value, fieldLabel) {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return `${fieldLabel} обязательно`;
+  }
+
+  return null;
+}
+
+function normalizeProductPayload(payload) {
+  return {
+    title: payload.title !== undefined ? String(payload.title).trim() : undefined,
+    category: payload.category !== undefined ? String(payload.category).trim() : undefined,
+    description: payload.description !== undefined ? String(payload.description).trim() : undefined,
+    price: payload.price !== undefined ? Number(payload.price) : undefined,
+    stock: payload.stock !== undefined ? Number(payload.stock) : undefined
+  };
+}
+
+function validateProductPayload(payload, { partial = false } = {}) {
+  const normalized = normalizeProductPayload(payload);
+
+  if (!partial) {
+    const requiredFields = ["title", "category", "description", "price", "stock"];
+    const hasMissingField = requiredFields.some((field) => normalized[field] === undefined);
+
+    if (hasMissingField) {
+      return { error: "Все поля обязательны" };
+    }
+  } else {
+    const hasNoFields =
+      normalized.title === undefined &&
+      normalized.category === undefined &&
+      normalized.description === undefined &&
+      normalized.price === undefined &&
+      normalized.stock === undefined;
+
+    if (hasNoFields) {
+      return { error: "Нет данных для обновления" };
+    }
+  }
+
+  if (normalized.title !== undefined) {
+    const error = validateTextField(normalized.title, "Название товара");
+    if (error) {
+      return { error };
+    }
+  }
+
+  if (normalized.category !== undefined) {
+    const error = validateTextField(normalized.category, "Категория");
+    if (error) {
+      return { error };
+    }
+  }
+
+  if (normalized.description !== undefined) {
+    const error = validateTextField(normalized.description, "Описание");
+    if (error) {
+      return { error };
+    }
+  }
+
+  if (normalized.price !== undefined && (!Number.isFinite(normalized.price) || normalized.price <= 0)) {
+    return { error: "Цена должна быть положительным числом" };
+  }
+
+  if (
+    normalized.stock !== undefined &&
+    (!Number.isInteger(normalized.stock) || normalized.stock < 0)
+  ) {
+    return { error: "Количество на складе должно быть целым числом от 0" };
+  }
+
+  return { value: normalized };
+}
+
+function findProductOr404(id, res) {
+  const product = products.find((item) => item.id === id);
+
+  if (!product) {
+    res.status(404).json({ error: "Товар не найден" });
+    return null;
+  }
+
+  return product;
+}
 
 const swaggerOptions = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "API продажи недвижимости",
+      title: "Electro Store API",
       version: "1.0.0",
-      description: "REST API для управления объектами недвижимости"
+      description: "REST API для управления товарами интернет-магазина электроники"
     },
     servers: [
       {
@@ -60,23 +223,36 @@ const swaggerOptions = {
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-function findPropertyOr404(id, res) {
-  const property = properties.find((p) => p.id === id);
-  if (!property) {
-    res.status(404).json({ error: "Объект недвижимости не найден" });
-    return null;
-  }
-  return property;
-}
-
 /**
  * @swagger
  * components:
  *   schemas:
- *     Property:
+ *     User:
  *       type: object
  *       required:
- *         - name
+ *         - id
+ *         - email
+ *         - first_name
+ *         - last_name
+ *       properties:
+ *         id:
+ *           type: string
+ *         email:
+ *           type: string
+ *           format: email
+ *         first_name:
+ *           type: string
+ *         last_name:
+ *           type: string
+ *       example:
+ *         id: usr001
+ *         email: student@example.com
+ *         first_name: Ivan
+ *         last_name: Petrov
+ *     Product:
+ *       type: object
+ *       required:
+ *         - title
  *         - category
  *         - description
  *         - price
@@ -84,165 +260,135 @@ function findPropertyOr404(id, res) {
  *       properties:
  *         id:
  *           type: string
- *           description: Автоматически сгенерированный ID объекта
- *         name:
+ *           description: Уникальный идентификатор товара
+ *         title:
  *           type: string
- *           description: Название объекта недвижимости
+ *           description: Название товара
  *         category:
  *           type: string
- *           description: Категория (Квартира, Дом, Участок и т.д.)
+ *           description: Категория товара
  *         description:
  *           type: string
- *           description: Описание объекта
+ *           description: Описание товара
  *         price:
  *           type: number
- *           description: Цена в рублях
+ *           description: Цена товара в рублях
  *         stock:
  *           type: integer
- *           description: Количество на складе
+ *           description: Остаток на складе
  *       example:
- *         id: abc123
- *         name: "Студия 27 м², Мурино"
- *         category: "Квартира"
- *         description: "Компактная студия у метро Девяткино"
- *         price: 5100000
- *         stock: 1
+ *         id: prd001
+ *         title: Ноутбук NovaBook Air 14
+ *         category: Ноутбуки
+ *         description: Легкий ноутбук для учебы и работы
+ *         price: 74990
+ *         stock: 6
  */
 
 /**
  * @swagger
- * /api/properties:
- *   post:
- *     summary: Создать новый объект недвижимости
- *     tags: [Properties]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *               - category
- *               - description
- *               - price
- *               - stock
- *             properties:
- *               name:
- *                 type: string
- *               category:
- *                 type: string
- *               description:
- *                 type: string
- *               price:
- *                 type: number
- *               stock:
- *                 type: integer
- *     responses:
- *       201:
- *         description: Объект создан
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Property'
- *       400:
- *         description: Ошибка валидации
- */
-app.post("/api/properties", (req, res) => {
-  const { name, category, description, price, stock } = req.body;
-
-  if (!name || !category || !description || price === undefined || stock === undefined) {
-    return res.status(400).json({ error: "Все поля обязательны" });
-  }
-
-  const parsedPrice = Number(price);
-  const parsedStock = Number(stock);
-
-  if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
-    return res.status(400).json({ error: "Цена должна быть положительным числом" });
-  }
-
-  if (!Number.isInteger(parsedStock) || parsedStock < 0) {
-    return res.status(400).json({ error: "Количество должно быть целым числом от 0" });
-  }
-
-  const newProperty = {
-    id: nanoid(6),
-    name: String(name).trim(),
-    category: String(category).trim(),
-    description: String(description).trim(),
-    price: parsedPrice,
-    stock: parsedStock
-  };
-
-  properties.push(newProperty);
-  return res.status(201).json(newProperty);
-});
-
-/**
- * @swagger
- * /api/properties:
+ * /api/products:
  *   get:
- *     summary: Получить все объекты недвижимости
- *     tags: [Properties]
+ *     summary: Получить список всех товаров
+ *     tags: [Products]
  *     responses:
  *       200:
- *         description: Список объектов
+ *         description: Список товаров
  *         content:
  *           application/json:
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/Property'
+ *                 $ref: '#/components/schemas/Product'
  */
-app.get("/api/properties", (req, res) => {
-  res.json(properties);
+app.get("/api/products", (req, res) => {
+  res.json(products);
 });
 
 /**
  * @swagger
- * /api/properties/{id}:
+ * /api/products/{id}:
  *   get:
- *     summary: Получить объект по ID
- *     tags: [Properties]
+ *     summary: Получить товар по идентификатору
+ *     tags: [Products]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: ID объекта
+ *         description: ID товара
  *     responses:
  *       200:
- *         description: Данные объекта
+ *         description: Данные товара
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Property'
+ *               $ref: '#/components/schemas/Product'
  *       404:
- *         description: Объект не найден
+ *         description: Товар не найден
  */
-app.get("/api/properties/:id", (req, res) => {
-  const property = findPropertyOr404(req.params.id, res);
-  if (!property) {
+app.get("/api/products/:id", (req, res) => {
+  const product = findProductOr404(req.params.id, res);
+
+  if (!product) {
     return;
   }
-  res.json(property);
+
+  res.json(product);
 });
 
 /**
  * @swagger
- * /api/properties/{id}:
+ * /api/products:
+ *   post:
+ *     summary: Создать новый товар
+ *     tags: [Products]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Product'
+ *     responses:
+ *       201:
+ *         description: Товар создан
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Product'
+ *       400:
+ *         description: Ошибка валидации
+ */
+app.post("/api/products", (req, res) => {
+  const result = validateProductPayload(req.body);
+
+  if (result.error) {
+    return res.status(400).json({ error: result.error });
+  }
+
+  const newProduct = {
+    id: nanoid(6),
+    ...result.value
+  };
+
+  products.push(newProduct);
+  return res.status(201).json(newProduct);
+});
+
+/**
+ * @swagger
+ * /api/products/{id}:
  *   patch:
- *     summary: Обновить данные объекта
- *     tags: [Properties]
+ *     summary: Обновить данные товара
+ *     tags: [Products]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: ID объекта
+ *         description: ID товара
  *     requestBody:
  *       required: true
  *       content:
@@ -250,7 +396,7 @@ app.get("/api/properties/:id", (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *               name:
+ *               title:
  *                 type: string
  *               category:
  *                 type: string
@@ -262,82 +408,60 @@ app.get("/api/properties/:id", (req, res) => {
  *                 type: integer
  *     responses:
  *       200:
- *         description: Обновлённый объект
+ *         description: Обновленный товар
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Property'
+ *               $ref: '#/components/schemas/Product'
  *       400:
- *         description: Нет данных для обновления
+ *         description: Ошибка валидации
  *       404:
- *         description: Объект не найден
+ *         description: Товар не найден
  */
-app.patch("/api/properties/:id", (req, res) => {
-  const property = findPropertyOr404(req.params.id, res);
-  if (!property) {
+app.patch("/api/products/:id", (req, res) => {
+  const product = findProductOr404(req.params.id, res);
+
+  if (!product) {
     return;
   }
 
-  const { name, category, description, price, stock } = req.body;
+  const result = validateProductPayload(req.body, { partial: true });
 
-  if (
-    name === undefined &&
-    category === undefined &&
-    description === undefined &&
-    price === undefined &&
-    stock === undefined
-  ) {
-    return res.status(400).json({ error: "Нет данных для обновления" });
+  if (result.error) {
+    return res.status(400).json({ error: result.error });
   }
 
-  if (name !== undefined) property.name = String(name).trim();
-  if (category !== undefined) property.category = String(category).trim();
-  if (description !== undefined) property.description = String(description).trim();
-
-  if (price !== undefined) {
-    const parsedPrice = Number(price);
-    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
-      return res.status(400).json({ error: "Цена должна быть положительным числом" });
-    }
-    property.price = parsedPrice;
-  }
-
-  if (stock !== undefined) {
-    const parsedStock = Number(stock);
-    if (!Number.isInteger(parsedStock) || parsedStock < 0) {
-      return res.status(400).json({ error: "Количество должно быть целым числом от 0" });
-    }
-    property.stock = parsedStock;
-  }
-
-  return res.json(property);
+  Object.assign(product, result.value);
+  return res.json(product);
 });
 
 /**
  * @swagger
- * /api/properties/{id}:
+ * /api/products/{id}:
  *   delete:
- *     summary: Удалить объект недвижимости
- *     tags: [Properties]
+ *     summary: Удалить товар
+ *     tags: [Products]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: ID объекта
+ *         description: ID товара
  *     responses:
  *       204:
- *         description: Объект удалён
+ *         description: Товар удален
  *       404:
- *         description: Объект не найден
+ *         description: Товар не найден
  */
-app.delete("/api/properties/:id", (req, res) => {
-  const index = properties.findIndex((p) => p.id === req.params.id);
-  if (index === -1) {
-    return res.status(404).json({ error: "Объект недвижимости не найден" });
+app.delete("/api/products/:id", (req, res) => {
+  const productExists = products.some((item) => item.id === req.params.id);
+
+  if (!productExists) {
+    return res.status(404).json({ error: "Товар не найден" });
   }
-  properties.splice(index, 1);
+
+  products = products.filter((item) => item.id !== req.params.id);
   return res.status(204).send();
 });
 

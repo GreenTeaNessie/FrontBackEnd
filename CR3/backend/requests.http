@@ -1,0 +1,104 @@
+@api = http://localhost:3018/api
+@access = REPLACE_WITH_ACCESS
+@refresh = REPLACE_WITH_REFRESH
+@propertyId = REPLACE_WITH_PROPERTY_ID
+@reminderId = REPLACE_WITH_REMINDER_ID
+
+### Health
+GET {{api}}/health
+
+### Public PWA config
+GET {{api}}/config
+
+### Login admin
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### Login realtor
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "realtor",
+  "password": "realtor123"
+}
+
+### Refresh
+POST {{api}}/auth/refresh
+Content-Type: application/json
+x-refresh-token: {{refresh}}
+
+{
+  "refreshToken": "{{refresh}}"
+}
+
+### Me
+GET {{api}}/auth/me
+Authorization: Bearer {{access}}
+
+### List properties
+GET {{api}}/properties
+Authorization: Bearer {{access}}
+
+### Create property
+POST {{api}}/properties
+Content-Type: application/json
+Authorization: Bearer {{access}}
+
+{
+  "title": "Апартаменты с видом на парк",
+  "propertyType": "Апартаменты",
+  "address": "Москва, ул. Большая Дмитровка, 18",
+  "description": "Объект с дизайнерской отделкой, мебелью и системой умный дом.",
+  "price": 20500000,
+  "area": 52
+}
+
+### Update property
+PUT {{api}}/properties/{{propertyId}}
+Content-Type: application/json
+Authorization: Bearer {{access}}
+
+{
+  "title": "Апартаменты с видом на парк и мебелью",
+  "propertyType": "Апартаменты",
+  "address": "Москва, ул. Большая Дмитровка, 18",
+  "description": "Объект с дизайнерской отделкой, мебелью и готовой арендной моделью.",
+  "price": 21200000,
+  "area": 52
+}
+
+### Delete property
+DELETE {{api}}/properties/{{propertyId}}
+Authorization: Bearer {{access}}
+
+### List users (admin)
+GET {{api}}/users
+Authorization: Bearer {{access}}
+
+### Create reminder
+POST {{api}}/reminders
+Content-Type: application/json
+Authorization: Bearer {{access}}
+
+{
+  "propertyId": "{{propertyId}}",
+  "text": "Связаться с клиентом по объекту",
+  "reminderTime": 1893456000000
+}
+
+### List reminders
+GET {{api}}/reminders
+Authorization: Bearer {{access}}
+
+### Delete reminder
+DELETE {{api}}/reminders/{{reminderId}}
+Authorization: Bearer {{access}}
+
+### Snooze reminder for 5 minutes (called by Service Worker notification action)
+POST {{api}}/snooze?reminderId={{reminderId}}

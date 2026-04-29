@@ -2,557 +2,913 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import { api, clearTokens, getAccessToken } from "./api/client";
 
-const emptyAuthForm = { username: "", password: "", role: "user" };
-const emptyPropertyForm = { title: "", propertyType: "", address: "", description: "", imageUrl: "", price: "", area: "" };
-const emptyUserForm = { username: "", role: "user", isBlocked: false };
-
-const roleLabels = { user: "Покупатель", seller: "Риелтор", admin: "Администратор" };
-const demoAccounts = [
-  { username: "admin",   password: "admin123",   role: "admin"  },
-  { username: "realtor", password: "realtor123", role: "seller" },
-  { username: "buyer",   password: "buyer123",   role: "user"   },
-];
-
-function formatPrice(v) { return new Intl.NumberFormat("ru-RU").format(v) + " ₽"; }
-function mapError(e, fb) { return e.response?.data?.error || fb; }
-
-const IMAGES_BY_TYPE = {
-  // Квартиры — интерьеры, виды из окон, жилые комплексы
-  квартира: [
-    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=500&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&h=500&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=500&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&h=500&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&h=500&fit=crop&auto=format",
-  ],
-  // Дома — фасады, коттеджи, загородные дома
-  дом: [
-    "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&h=500&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=500&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&h=500&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=500&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=500&fit=crop&auto=format",
-  ],
-  // Кухни / студии
-  студия: [
-    "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&h=500&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=500&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=500&fit=crop&auto=format",
-  ],
-  // Коммерческая / офис
-  офис: [
-    "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=500&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=800&h=500&fit=crop&auto=format",
-  ],
-  // Запасной пул — если тип не совпал
-  default: [
-    "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&h=500&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&h=500&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=500&fit=crop&auto=format",
-    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=500&fit=crop&auto=format",
-  ],
+const emptyAuthForm = {
+  email: "",
+  first_name: "",
+  last_name: "",
+  password: ""
 };
 
-function getPropertyImage(p) {
-  if (p.imageUrl) return p.imageUrl;
-  const key = (p.propertyType || "").toLowerCase().trim();
-  const pool = IMAGES_BY_TYPE[key] || IMAGES_BY_TYPE.default;
-  const hash = p.id.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-  return pool[hash % pool.length];
+const emptyProductForm = {
+  title: "",
+  category: "",
+  description: "",
+  price: ""
+};
+
+const emptyUserForm = {
+  email: "",
+  first_name: "",
+  last_name: "",
+  role: "user",
+  isBlocked: false
+};
+
+const roleLabels = {
+  user: "Покупатель",
+  seller: "Продавец",
+  admin: "Администратор"
+};
+
+const demoAccounts = [
+  { email: "admin@electro.local", password: "Admin1234", role: "admin" },
+  { email: "seller@electro.local", password: "Seller1234", role: "seller" },
+  { email: "user@electro.local", password: "User1234", role: "user" }
+];
+
+const categoryImages = {
+  Ноутбуки: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=1200&h=720&fit=crop&auto=format",
+  Смартфоны: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1200&h=720&fit=crop&auto=format",
+  Планшеты: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=1200&h=720&fit=crop&auto=format",
+  Мониторы: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=1200&h=720&fit=crop&auto=format",
+  Аудио: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1200&h=720&fit=crop&auto=format",
+  default: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&h=720&fit=crop&auto=format"
+};
+
+function mapError(error, fallbackMessage) {
+  return error.response?.data?.error || fallbackMessage;
+}
+
+function formatPrice(value) {
+  return `${new Intl.NumberFormat("ru-RU").format(value)} ₽`;
+}
+
+function getProductImage(product) {
+  return categoryImages[product.category] || categoryImages.default;
 }
 
 export default function App() {
   const [mode, setMode] = useState("login");
   const [authForm, setAuthForm] = useState(emptyAuthForm);
-  const [propertyForm, setPropertyForm] = useState(emptyPropertyForm);
-  const [managedUserForm, setManagedUserForm] = useState(emptyUserForm);
-  const [properties, setProperties] = useState([]);
+  const [productForm, setProductForm] = useState(emptyProductForm);
+  const [userForm, setUserForm] = useState(emptyUserForm);
+  const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
-  const [selectedProperty, setSelectedProperty] = useState(null);
-  const [selectedManagedUser, setSelectedManagedUser] = useState(null);
-  const [propertyFormMode, setPropertyFormMode] = useState("create");
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [productFormMode, setProductFormMode] = useState("create");
   const [currentUser, setCurrentUser] = useState(null);
   const [isBusy, setIsBusy] = useState(false);
   const [infoMessage, setInfoMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const canEdit = currentUser && ["seller", "admin"].includes(currentUser.role);
+  const canManageProducts = currentUser && ["seller", "admin"].includes(currentUser.role);
+  const canDeleteProducts = currentUser?.role === "admin";
   const isAdmin = currentUser?.role === "admin";
+  const isEditingSelf = selectedUser?.id === currentUser?.id;
 
   useEffect(() => {
-    const onExpired = () => {
-      setCurrentUser(null); setProperties([]); setUsers([]);
-      setSelectedProperty(null); setSelectedManagedUser(null);
-      setPropertyForm(emptyPropertyForm); setManagedUserForm(emptyUserForm);
-      setErrorMessage("Сессия истекла. Войдите заново.");
+    const handleSessionExpired = () => {
+      setCurrentUser(null);
+      setProducts([]);
+      setUsers([]);
+      setSelectedProduct(null);
+      setSelectedUser(null);
+      setProductFormMode("create");
+      setProductForm(emptyProductForm);
+      setUserForm(emptyUserForm);
+      setErrorMessage("Сессия истекла. Выполните вход снова.");
+      setInfoMessage("");
     };
-    window.addEventListener("auth:expired", onExpired);
-    return () => window.removeEventListener("auth:expired", onExpired);
+
+    window.addEventListener("auth:expired", handleSessionExpired);
+    return () => window.removeEventListener("auth:expired", handleSessionExpired);
   }, []);
 
-  useEffect(() => { bootstrap(); }, []);
+  useEffect(() => {
+    bootstrap();
+  }, []);
 
   async function bootstrap() {
-    if (!getAccessToken()) return;
+    if (!getAccessToken()) {
+      return;
+    }
+
     setIsBusy(true);
+    setErrorMessage("");
+
     try {
       const me = await api.getMe();
       setCurrentUser(me);
-      await loadData(me);
-    } catch (e) {
+      await loadDashboard(me);
+    } catch (error) {
       clearTokens();
-      setErrorMessage(mapError(e, "Не удалось восстановить сессию."));
-    } finally { setIsBusy(false); }
-  }
-
-  async function loadData(user) {
-    const props = await api.getProperties();
-    setProperties(props);
-    if (selectedProperty) {
-      const fresh = props.find(p => p.id === selectedProperty.id);
-      setSelectedProperty(fresh || null);
-      if (fresh && propertyFormMode === "edit") {
-        setPropertyForm({ title: fresh.title, propertyType: fresh.propertyType,
-          address: fresh.address, description: fresh.description,
-          imageUrl: fresh.imageUrl || "",
-          price: String(fresh.price), area: String(fresh.area) });
-      }
+      setCurrentUser(null);
+      setErrorMessage(mapError(error, "Не удалось восстановить сессию."));
+    } finally {
+      setIsBusy(false);
     }
+  }
+
+  async function loadProducts(preferredId) {
+    const response = await api.getProducts();
+    setProducts(response);
+
+    if (response.length === 0) {
+      setSelectedProduct(null);
+      return response;
+    }
+
+    const targetId = preferredId || selectedProduct?.id || response[0].id;
+
+    try {
+      const freshProduct = await api.getProductById(targetId);
+      setSelectedProduct(freshProduct);
+    } catch (error) {
+      const fallbackProduct = response.find((item) => item.id === targetId) || response[0];
+      setSelectedProduct(fallbackProduct);
+    }
+
+    return response;
+  }
+
+  async function loadUsers(preferredId) {
+    const response = await api.getUsers();
+    setUsers(response);
+
+    if (response.length === 0) {
+      setSelectedUser(null);
+      setUserForm(emptyUserForm);
+      return response;
+    }
+
+    const targetId = preferredId || selectedUser?.id || response[0].id;
+    const freshUser = await api.getUserById(targetId);
+
+    setSelectedUser(freshUser);
+    setUserForm({
+      email: freshUser.email,
+      first_name: freshUser.first_name,
+      last_name: freshUser.last_name,
+      role: freshUser.role,
+      isBlocked: freshUser.isBlocked
+    });
+
+    return response;
+  }
+
+  async function loadDashboard(user) {
+    await loadProducts();
+
     if (user.role === "admin") {
-      const us = await api.getUsers();
-      setUsers(us);
-      if (selectedManagedUser) {
-        const freshU = us.find(u => u.id === selectedManagedUser.id);
-        setSelectedManagedUser(freshU || null);
-        if (freshU) setManagedUserForm({ username: freshU.username, role: freshU.role, isBlocked: freshU.isBlocked });
-      }
-    } else { setUsers([]); setSelectedManagedUser(null); setManagedUserForm(emptyUserForm); }
+      await loadUsers();
+    } else {
+      setUsers([]);
+      setSelectedUser(null);
+      setUserForm(emptyUserForm);
+    }
   }
 
-  async function reload() {
-    if (!currentUser) return;
-    setIsBusy(true); setErrorMessage("");
-    try { await loadData(currentUser); } catch (e) { setErrorMessage(mapError(e, "Не удалось обновить данные.")); }
-    finally { setIsBusy(false); }
-  }
-
-  function resetPropertyForm() { setPropertyFormMode("create"); setPropertyForm(emptyPropertyForm); }
-
-  async function handleAuthSubmit(e) {
-    e.preventDefault(); setIsBusy(true); setErrorMessage(""); setInfoMessage("");
-    try {
-      if (mode === "register") { await api.register(authForm); setInfoMessage("Регистрация успешна."); }
-      const res = await api.login(authForm);
-      setCurrentUser(res.user); setAuthForm(emptyAuthForm);
-      await loadData(res.user);
-      setInfoMessage(`Добро пожаловать, ${res.user.username}.`);
-    } catch (e) { setErrorMessage(mapError(e, "Не удалось авторизоваться.")); }
-    finally { setIsBusy(false); }
-  }
-
-  function fillDemo(acc) { setMode("login"); setAuthForm({ username: acc.username, password: acc.password, role: acc.role }); }
-
-  function handleLogout() {
-    clearTokens(); setCurrentUser(null); setProperties([]); setUsers([]);
-    setSelectedProperty(null); setSelectedManagedUser(null);
-    resetPropertyForm(); setManagedUserForm(emptyUserForm);
-    setInfoMessage("Вы вышли из системы."); setErrorMessage("");
-  }
-
-  async function handleSelectProperty(id) {
-    setIsBusy(true); setErrorMessage("");
-    try { setSelectedProperty(await api.getPropertyById(id)); }
-    catch (e) { setErrorMessage(mapError(e, "Не удалось загрузить объект.")); }
-    finally { setIsBusy(false); }
-  }
-
-  function handleEditProperty() {
-    if (!selectedProperty || !canEdit) return;
-    setPropertyFormMode("edit");
-    setPropertyForm({ title: selectedProperty.title, propertyType: selectedProperty.propertyType,
-      address: selectedProperty.address, description: selectedProperty.description,
-      imageUrl: selectedProperty.imageUrl || "",
-      price: String(selectedProperty.price), area: String(selectedProperty.area) });
+  async function handleAuthSubmit(event) {
+    event.preventDefault();
+    setIsBusy(true);
     setErrorMessage("");
-  }
+    setInfoMessage("");
 
-  async function handlePropertySubmit(e) {
-    e.preventDefault();
-    if (!canEdit) { setErrorMessage("Доступно только риелтору или администратору."); return; }
-    setIsBusy(true); setErrorMessage(""); setInfoMessage("");
     try {
-      if (propertyFormMode === "edit" && selectedProperty) {
-        setSelectedProperty(await api.updateProperty(selectedProperty.id, propertyForm));
-        setInfoMessage("Объявление обновлено.");
-      } else {
-        setSelectedProperty(await api.createProperty(propertyForm));
-        setInfoMessage("Объявление создано.");
+      if (mode === "register") {
+        await api.register(authForm);
+        setInfoMessage("Регистрация выполнена. Вход выполнен автоматически.");
       }
-      resetPropertyForm(); await loadData(currentUser);
-    } catch (e) { setErrorMessage(mapError(e, "Не удалось сохранить.")); }
-    finally { setIsBusy(false); }
+
+      await api.login({
+        email: authForm.email,
+        password: authForm.password
+      });
+
+      const me = await api.getMe();
+      setCurrentUser(me);
+      setAuthForm(emptyAuthForm);
+      await loadDashboard(me);
+    } catch (error) {
+      setErrorMessage(mapError(error, "Не удалось выполнить вход."));
+    } finally {
+      setIsBusy(false);
+    }
   }
 
-  async function handleDeleteProperty() {
-    if (!selectedProperty || !isAdmin) { setErrorMessage("Удаление доступно только администратору."); return; }
-    if (!window.confirm(`Удалить «${selectedProperty.title}»?`)) return;
-    setIsBusy(true); setErrorMessage(""); setInfoMessage("");
+  async function handleQuickLogin(account) {
+    setIsBusy(true);
+    setErrorMessage("");
+    setInfoMessage("");
+
     try {
-      await api.deleteProperty(selectedProperty.id);
-      setSelectedProperty(null); resetPropertyForm();
-      await loadData(currentUser); setInfoMessage("Объявление удалено.");
-    } catch (e) { setErrorMessage(mapError(e, "Не удалось удалить.")); }
-    finally { setIsBusy(false); }
+      await api.login({
+        email: account.email,
+        password: account.password
+      });
+
+      const me = await api.getMe();
+      setCurrentUser(me);
+      setAuthForm({
+        email: account.email,
+        first_name: "",
+        last_name: "",
+        password: account.password
+      });
+      await loadDashboard(me);
+    } catch (error) {
+      setErrorMessage(mapError(error, "Не удалось выполнить демо-вход."));
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  function resetProductForm() {
+    setProductFormMode("create");
+    setProductForm(emptyProductForm);
+  }
+
+  function startEditingProduct() {
+    if (!selectedProduct) {
+      return;
+    }
+
+    setProductFormMode("edit");
+    setProductForm({
+      title: selectedProduct.title,
+      category: selectedProduct.category,
+      description: selectedProduct.description,
+      price: String(selectedProduct.price)
+    });
+  }
+
+  async function handleReloadDashboard() {
+    if (!currentUser) {
+      return;
+    }
+
+    setIsBusy(true);
+    setErrorMessage("");
+
+    try {
+      await loadDashboard(currentUser);
+    } catch (error) {
+      setErrorMessage(mapError(error, "Не удалось обновить данные панели."));
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  async function handleSelectProduct(id) {
+    setIsBusy(true);
+    setErrorMessage("");
+
+    try {
+      const product = await api.getProductById(id);
+      setSelectedProduct(product);
+    } catch (error) {
+      setErrorMessage(mapError(error, "Не удалось загрузить карточку товара."));
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  async function handleProductSubmit(event) {
+    event.preventDefault();
+
+    if (!canManageProducts) {
+      return;
+    }
+
+    setIsBusy(true);
+    setErrorMessage("");
+    setInfoMessage("");
+
+    const payload = {
+      title: productForm.title.trim(),
+      category: productForm.category.trim(),
+      description: productForm.description.trim(),
+      price: Number(productForm.price)
+    };
+
+    if (!payload.title || !payload.category || !payload.description) {
+      setErrorMessage("Заполните название товара, категорию и описание.");
+      setIsBusy(false);
+      return;
+    }
+
+    if (!Number.isFinite(payload.price) || payload.price <= 0) {
+      setErrorMessage("Введите корректную цену.");
+      setIsBusy(false);
+      return;
+    }
+
+    try {
+      let savedProduct;
+
+      if (productFormMode === "edit" && selectedProduct) {
+        savedProduct = await api.updateProduct(selectedProduct.id, payload);
+        setInfoMessage("Товар обновлен.");
+      } else {
+        savedProduct = await api.createProduct(payload);
+        setInfoMessage("Товар создан.");
+      }
+
+      resetProductForm();
+      await loadProducts(savedProduct.id);
+    } catch (error) {
+      setErrorMessage(mapError(error, "Не удалось сохранить товар."));
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  async function handleDeleteProduct() {
+    if (!selectedProduct || !canDeleteProducts) {
+      return;
+    }
+
+    const confirmed = window.confirm(`Удалить товар "${selectedProduct.title}"?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsBusy(true);
+    setErrorMessage("");
+    setInfoMessage("");
+
+    try {
+      await api.deleteProduct(selectedProduct.id);
+      setInfoMessage("Товар удален.");
+      resetProductForm();
+      await loadProducts();
+    } catch (error) {
+      setErrorMessage(mapError(error, "Не удалось удалить товар."));
+    } finally {
+      setIsBusy(false);
+    }
   }
 
   async function handleSelectUser(id) {
-    if (!isAdmin) return;
-    setIsBusy(true); setErrorMessage("");
+    setIsBusy(true);
+    setErrorMessage("");
+
     try {
-      const u = await api.getUserById(id);
-      setSelectedManagedUser(u);
-      setManagedUserForm({ username: u.username, role: u.role, isBlocked: u.isBlocked });
-    } catch (e) { setErrorMessage(mapError(e, "Не удалось загрузить пользователя.")); }
-    finally { setIsBusy(false); }
+      const user = await api.getUserById(id);
+      setSelectedUser(user);
+      setUserForm({
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        role: user.role,
+        isBlocked: user.isBlocked
+      });
+    } catch (error) {
+      setErrorMessage(mapError(error, "Не удалось загрузить пользователя."));
+    } finally {
+      setIsBusy(false);
+    }
   }
 
-  async function handleUserUpdate(e) {
-    e.preventDefault();
-    if (!isAdmin || !selectedManagedUser) return;
-    setIsBusy(true); setErrorMessage(""); setInfoMessage("");
+  async function handleUserSubmit(event) {
+    event.preventDefault();
+
+    if (!selectedUser || !isAdmin) {
+      return;
+    }
+
+    setIsBusy(true);
+    setErrorMessage("");
+    setInfoMessage("");
+
     try {
-      const updated = await api.updateUser(selectedManagedUser.id, managedUserForm);
-      const me = selectedManagedUser.id === currentUser.id ? await api.getMe() : currentUser;
-      setSelectedManagedUser(updated); setCurrentUser(me);
-      setInfoMessage("Пользователь обновлён."); await loadData(me);
-    } catch (e) { setErrorMessage(mapError(e, "Не удалось обновить.")); }
-    finally { setIsBusy(false); }
+      const updatedUser = await api.updateUser(selectedUser.id, userForm);
+      setInfoMessage("Пользователь обновлен.");
+      await loadUsers(updatedUser.id);
+
+      if (updatedUser.id === currentUser.id) {
+        const me = await api.getMe();
+        setCurrentUser(me);
+      }
+    } catch (error) {
+      setErrorMessage(mapError(error, "Не удалось обновить пользователя."));
+    } finally {
+      setIsBusy(false);
+    }
   }
 
   async function handleBlockUser() {
-    if (!isAdmin || !selectedManagedUser) return;
-    setIsBusy(true); setErrorMessage(""); setInfoMessage("");
+    if (!selectedUser || !isAdmin) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Заблокировать пользователя ${selectedUser.email}? Повторный вход будет запрещен.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsBusy(true);
+    setErrorMessage("");
+    setInfoMessage("");
+
     try {
-      const res = await api.blockUser(selectedManagedUser.id);
-      setSelectedManagedUser(res.user);
-      setManagedUserForm({ username: res.user.username, role: res.user.role, isBlocked: res.user.isBlocked });
-      await loadData(currentUser); setInfoMessage("Пользователь заблокирован.");
-    } catch (e) { setErrorMessage(mapError(e, "Не удалось заблокировать.")); }
-    finally { setIsBusy(false); }
+      await api.blockUser(selectedUser.id);
+      setInfoMessage("Пользователь заблокирован.");
+      await loadUsers(selectedUser.id);
+    } catch (error) {
+      setErrorMessage(mapError(error, "Не удалось заблокировать пользователя."));
+    } finally {
+      setIsBusy(false);
+    }
   }
 
-  function pf(key) {
-    return (e) => setPropertyForm(c => ({ ...c, [key]: e.target.value }));
-  }
-  function af(key) {
-    return (e) => setAuthForm(c => ({ ...c, [key]: e.target.value }));
-  }
-  function uf(key, isCheck) {
-    return (e) => setManagedUserForm(c => ({ ...c, [key]: isCheck ? e.target.checked : e.target.value }));
+  function handleLogout() {
+    clearTokens();
+    setCurrentUser(null);
+    setProducts([]);
+    setUsers([]);
+    setSelectedProduct(null);
+    setSelectedUser(null);
+    setProductFormMode("create");
+    setProductForm(emptyProductForm);
+    setUserForm(emptyUserForm);
+    setInfoMessage("Вы вышли из системы.");
+    setErrorMessage("");
   }
 
-  /* ── RENDER ──────────────────────────────────────────────── */
+  if (!currentUser) {
+    return (
+      <>
+        <nav className="navbar">
+          <div className="navbar-brand">
+            Electro Store
+            <span className="brand-dot" />
+          </div>
+          <span className="navbar-status">RBAC mode</span>
+        </nav>
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-      {/* Navbar */}
-      <nav className="navbar">
-        <div className="navbar-brand">
-          <div className="brand-dot" />
-          EstateHub
-        </div>
-        {isBusy && <span className="navbar-status">Загрузка…</span>}
-        {currentUser && (
-          <>
-            <div className="user-pill">
-              {currentUser.username}
-              <span className="role-tag">{roleLabels[currentUser.role]}</span>
-            </div>
-            <button className="btn btn-ghost btn-sm" onClick={handleLogout}>Выйти</button>
-          </>
-        )}
-      </nav>
-
-      {/* Alerts */}
-      {(errorMessage || infoMessage) && (
         <div className="alerts">
-          {errorMessage && <div className="alert error">{errorMessage}</div>}
-          {infoMessage  && <div className="alert info">{infoMessage}</div>}
+          {errorMessage ? <div className="alert error">{errorMessage}</div> : null}
+          {infoMessage ? <div className="alert info">{infoMessage}</div> : null}
         </div>
-      )}
 
-      {/* Auth page */}
-      {!currentUser ? (
-        <div className="auth-page">
+        <section className="auth-page">
           <div className="auth-card">
-            <h2>Вход в систему</h2>
-            <p className="auth-subtitle">Платформа управления недвижимостью</p>
-
             <div className="segmented">
-              <button className={mode === "login" ? "active" : ""} onClick={() => setMode("login")} type="button">Вход</button>
-              <button className={mode === "register" ? "active" : ""} onClick={() => setMode("register")} type="button">Регистрация</button>
+              <button
+                className={mode === "login" ? "active" : ""}
+                onClick={() => setMode("login")}
+                type="button"
+              >
+                Вход
+              </button>
+              <button
+                className={mode === "register" ? "active" : ""}
+                onClick={() => setMode("register")}
+                type="button"
+              >
+                Регистрация
+              </button>
             </div>
 
-            <form onSubmit={handleAuthSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div className="field">
-                <label>Логин</label>
-                <input value={authForm.username} onChange={af("username")} placeholder="username" required />
+            <h2>Практики 11-12</h2>
+            <p className="auth-subtitle">
+              Ролевая панель управления товарами. Публичная регистрация создает только роль `user`.
+            </p>
+
+            <form className="form-grid" onSubmit={handleAuthSubmit}>
+              <div className="field full-width">
+                <label>Email</label>
+                <input
+                  type="email"
+                  value={authForm.email}
+                  onChange={(event) =>
+                    setAuthForm((prev) => ({ ...prev, email: event.target.value }))
+                  }
+                  required
+                />
               </div>
-              <div className="field">
+
+              {mode === "register" ? (
+                <>
+                  <div className="field">
+                    <label>Имя</label>
+                    <input
+                      value={authForm.first_name}
+                      onChange={(event) =>
+                        setAuthForm((prev) => ({ ...prev, first_name: event.target.value }))
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="field">
+                    <label>Фамилия</label>
+                    <input
+                      value={authForm.last_name}
+                      onChange={(event) =>
+                        setAuthForm((prev) => ({ ...prev, last_name: event.target.value }))
+                      }
+                      required
+                    />
+                  </div>
+                </>
+              ) : null}
+
+              <div className="field full-width">
                 <label>Пароль</label>
-                <input type="password" value={authForm.password} onChange={af("password")} placeholder="••••••••" required />
+                <input
+                  type="password"
+                  value={authForm.password}
+                  onChange={(event) =>
+                    setAuthForm((prev) => ({ ...prev, password: event.target.value }))
+                  }
+                  required
+                />
               </div>
-              {mode === "register" && (
-                <div className="field">
-                  <label>Роль</label>
-                  <select value={authForm.role} onChange={af("role")}>
-                    <option value="user">Покупатель</option>
-                    <option value="seller">Риелтор</option>
-                    <option value="admin">Администратор</option>
-                  </select>
-                </div>
-              )}
-              <button className="btn btn-primary" type="submit" disabled={isBusy} style={{ marginTop: 4 }}>
-                {mode === "login" ? "Войти" : "Создать аккаунт"}
-              </button>
+
+              <div className="form-actions full-width">
+                <button className="btn btn-primary" disabled={isBusy} type="submit">
+                  {isBusy ? "Подождите..." : mode === "login" ? "Войти" : "Создать аккаунт"}
+                </button>
+              </div>
             </form>
 
-            <div className="demo-divider">Быстрый вход</div>
+            <div className="demo-divider">Демо-аккаунты</div>
+
             <div className="demo-accounts">
-              {demoAccounts.map(acc => (
-                <button key={acc.username} className="demo-card" type="button" onClick={() => fillDemo(acc)}>
-                  <strong>{acc.username}</strong>
-                  <span className="demo-role">{roleLabels[acc.role]}</span>
+              {demoAccounts.map((account) => (
+                <button
+                  key={account.email}
+                  className="demo-card"
+                  onClick={() => handleQuickLogin(account)}
+                  type="button"
+                >
+                  <span>
+                    <strong>{account.email}</strong>
+                    <span className="demo-role">{roleLabels[account.role]}</span>
+                  </span>
+                  <span>Войти</span>
                 </button>
               ))}
             </div>
           </div>
+        </section>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <nav className="navbar">
+        <div className="navbar-brand">
+          Electro Store
+          <span className="brand-dot" />
         </div>
-      ) : (
-        /* Main app */
-        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-          <div className="app-layout">
-            {/* Sidebar — catalog */}
-            <aside className="sidebar">
-              <div className="sidebar-header">
-                <h3>Каталог</h3>
-                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <span className="sidebar-count">{properties.length}</span>
-                  <button className="btn btn-ghost btn-sm btn-icon-only" title="Обновить" onClick={reload}>↻</button>
-                </div>
-              </div>
-              <div className="sidebar-body">
-                {properties.length === 0 ? (
-                  <div className="empty-state">
-                    <div className="empty-icon">🏠</div>
-                    <p>Объявлений пока нет</p>
-                  </div>
-                ) : (
-                  properties.map(p => (
-                    <button
-                      key={p.id}
-                      className={`prop-card ${selectedProperty?.id === p.id ? "selected" : ""}`}
-                      onClick={() => handleSelectProperty(p.id)}
-                      type="button"
-                    >
-                      <img className="prop-thumb" src={getPropertyImage(p)} alt={p.title} />
-                      <div className="prop-info">
-                        <span className="prop-type">{p.propertyType}</span>
-                        <strong>{p.title}</strong>
-                        <span className="prop-addr">{p.address}</span>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span className="prop-price">{formatPrice(p.price)}</span>
-                          <span className="prop-area">{p.area} м²</span>
-                        </div>
-                      </div>
-                    </button>
-                  ))
-                )}
-              </div>
-            </aside>
+        <span className="navbar-status">RBAC panel</span>
+        <div className="user-pill">
+          {currentUser.email}
+          <span className="role-tag">{roleLabels[currentUser.role]}</span>
+        </div>
+        <button className="btn btn-ghost btn-sm" onClick={handleReloadDashboard} type="button">
+          Обновить
+        </button>
+        <button className="btn btn-ghost btn-sm" onClick={handleLogout} type="button">
+          Выйти
+        </button>
+      </nav>
 
-            {/* Main content */}
-            <main className="main-content">
-              {/* Property details */}
-              {selectedProperty ? (
-                <div className="panel">
-                  <img
-                    className="details-hero"
-                    src={getPropertyImage(selectedProperty)}
-                    alt={selectedProperty.title}
-                  />
-                  <div className="details-header">
-                    <div style={{ flex: 1 }}>
-                      <span className="details-type">{selectedProperty.propertyType}</span>
-                      <h2 className="details-title" style={{ marginTop: 8 }}>{selectedProperty.title}</h2>
-                      <p className="details-addr">📍 {selectedProperty.address}</p>
-                    </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div className="details-price">{formatPrice(selectedProperty.price)}</div>
-                      <div style={{ fontSize: "0.875rem", color: "var(--muted)", marginTop: 4 }}>{selectedProperty.area} м²</div>
-                    </div>
-                  </div>
+      <div className="alerts">
+        {errorMessage ? <div className="alert error">{errorMessage}</div> : null}
+        {infoMessage ? <div className="alert info">{infoMessage}</div> : null}
+      </div>
 
-                  {selectedProperty.description && (
-                    <p className="details-desc">{selectedProperty.description}</p>
-                  )}
-
-                  <div className="details-meta-grid" style={{ marginBottom: 16 }}>
-                    <dl className="meta-item"><dt>ID</dt><dd>{selectedProperty.id}</dd></dl>
-                    <dl className="meta-item"><dt>Риелтор</dt><dd>{selectedProperty.agentUsername}</dd></dl>
-                    <dl className="meta-item"><dt>Площадь</dt><dd>{selectedProperty.area} м²</dd></dl>
-                  </div>
-
-                  <div className="details-actions">
-                    {canEdit && (
-                      <button className="btn btn-ghost btn-sm" onClick={handleEditProperty}>Редактировать</button>
-                    )}
-                    {isAdmin && (
-                      <button className="btn btn-danger btn-sm" onClick={handleDeleteProperty}>Удалить</button>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                !canEdit && (
-                  <div className="panel">
-                    <div className="empty-state">
-                      <div className="empty-icon">🏘️</div>
-                      <p>Выберите объект из каталога слева, чтобы посмотреть подробную информацию</p>
-                    </div>
-                  </div>
-                )
-              )}
-
-              {/* Property form (seller / admin) */}
-              {canEdit && (
-                <div className="panel">
-                  <div className="panel-header">
-                    <h2>{propertyFormMode === "edit" ? "Редактирование объявления" : "Новое объявление"}</h2>
-                    {propertyFormMode === "edit" && (
-                      <button className="btn btn-ghost btn-sm" onClick={resetPropertyForm}>Отменить</button>
-                    )}
-                  </div>
-
-                  <form onSubmit={handlePropertySubmit}>
-                    <div className="form-grid">
-                      <div className="field full-width">
-                        <label>Заголовок объявления</label>
-                        <input value={propertyForm.title} onChange={pf("title")} placeholder="2-к квартира у метро" required />
-                      </div>
-                      <div className="field full-width">
-                        <label>Фото объекта (URL, необязательно)</label>
-                        <input value={propertyForm.imageUrl} onChange={pf("imageUrl")} placeholder="https://..." />
-                      </div>
-                      <div className="field">
-                        <label>Тип объекта</label>
-                        <input value={propertyForm.propertyType} onChange={pf("propertyType")} placeholder="Квартира" required />
-                      </div>
-                      <div className="field">
-                        <label>Адрес</label>
-                        <input value={propertyForm.address} onChange={pf("address")} placeholder="ул. Ленина, 10" required />
-                      </div>
-                      <div className="field">
-                        <label>Стоимость, ₽</label>
-                        <input type="number" min="1" value={propertyForm.price} onChange={pf("price")} placeholder="5000000" required />
-                      </div>
-                      <div className="field">
-                        <label>Площадь, м²</label>
-                        <input type="number" min="1" value={propertyForm.area} onChange={pf("area")} placeholder="54" required />
-                      </div>
-                      <div className="field full-width">
-                        <label>Описание</label>
-                        <textarea rows={3} value={propertyForm.description} onChange={pf("description")} placeholder="Опишите объект…" required />
-                      </div>
-                    </div>
-                    <div className="form-actions" style={{ marginTop: 14 }}>
-                      <button className="btn btn-primary" type="submit" disabled={isBusy}>
-                        {propertyFormMode === "edit" ? "Сохранить изменения" : "Создать объявление"}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
-
-              {/* Admin: users */}
-              {isAdmin && (
-                <div className="panel">
-                  <div className="panel-header">
-                    <h2>Управление пользователями</h2>
-                    <button className="btn btn-ghost btn-sm" onClick={reload}>Обновить</button>
-                  </div>
-
-                  <div className="admin-row">
-                    <div>
-                      <p className="section-label">Список пользователей</p>
-                      <div className="users-list">
-                        {users.map(u => (
-                          <button
-                            key={u.id}
-                            className={`user-card ${selectedManagedUser?.id === u.id ? "selected" : ""}`}
-                            type="button"
-                            onClick={() => handleSelectUser(u.id)}
-                          >
-                            <div>
-                              <div className="user-name">{u.username}</div>
-                              <div className="user-role">{roleLabels[u.role]}</div>
-                            </div>
-                            <span className={`status-badge ${u.isBlocked ? "blocked" : "active"}`}>
-                              {u.isBlocked ? "Заблокирован" : "Активен"}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <p className="section-label">
-                        {selectedManagedUser ? `Редактировать: ${selectedManagedUser.username}` : "Выберите пользователя"}
-                      </p>
-                      {selectedManagedUser ? (
-                        <form onSubmit={handleUserUpdate} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                          <div className="field">
-                            <label>Логин</label>
-                            <input value={managedUserForm.username} onChange={uf("username")} required />
-                          </div>
-                          <div className="field">
-                            <label>Роль</label>
-                            <select value={managedUserForm.role} onChange={uf("role")}>
-                              <option value="user">Покупатель</option>
-                              <option value="seller">Риелтор</option>
-                              <option value="admin">Администратор</option>
-                            </select>
-                          </div>
-                          <label className="checkbox-field">
-                            <input type="checkbox" checked={managedUserForm.isBlocked} onChange={uf("isBlocked", true)} />
-                            Пользователь заблокирован
-                          </label>
-                          <div className="form-actions">
-                            <button className="btn btn-primary" type="submit" disabled={isBusy}>Сохранить</button>
-                            <button
-                              className="btn btn-danger"
-                              type="button"
-                              disabled={isBusy || selectedManagedUser.id === currentUser.id}
-                              onClick={handleBlockUser}
-                            >
-                              Заблокировать
-                            </button>
-                          </div>
-                        </form>
-                      ) : (
-                        <div className="empty-state" style={{ padding: "20px 0" }}>
-                          <p>Выберите пользователя из списка</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </main>
+      <div className="app-layout">
+        <aside className="sidebar">
+          <div className="sidebar-header">
+            <h3>Товары</h3>
+            <span className="sidebar-count">{products.length}</span>
           </div>
 
-          <footer className="footer">© 2025 EstateHub</footer>
-        </div>
-      )}
-    </div>
+          <div className="sidebar-body">
+            {products.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">□</div>
+                <p>Каталог пуст. {canManageProducts ? "Создайте первый товар." : "Ожидайте пополнение каталога."}</p>
+              </div>
+            ) : (
+              products.map((product) => (
+                <button
+                  key={product.id}
+                  className={`prop-card ${selectedProduct?.id === product.id ? "selected" : ""}`}
+                  onClick={() => handleSelectProduct(product.id)}
+                  type="button"
+                >
+                  <img className="prop-thumb" src={getProductImage(product)} alt={product.title} />
+                  <div className="prop-info">
+                    <span className="prop-type">{product.category}</span>
+                    <strong>{product.title}</strong>
+                    <span className="prop-addr">{product.description}</span>
+                    <span className="prop-price">{formatPrice(product.price)}</span>
+                    <span className="prop-area">ID: {product.id}</span>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </aside>
+
+        <main className="main-content">
+          <section className="panel">
+            <div className="panel-header">
+              <h2>Карточка товара</h2>
+              <span className="section-label">{roleLabels[currentUser.role]}</span>
+            </div>
+
+            {selectedProduct ? (
+              <>
+                <img
+                  className="details-hero"
+                  src={getProductImage(selectedProduct)}
+                  alt={selectedProduct.title}
+                />
+
+                <div className="details-header">
+                  <div>
+                    <h3 className="details-title">{selectedProduct.title}</h3>
+                    <span className="details-type">{selectedProduct.category}</span>
+                  </div>
+                  <div className="details-price">{formatPrice(selectedProduct.price)}</div>
+                </div>
+
+                <div className="details-addr">Каталог доступен ролям user, seller и admin.</div>
+                <p className="details-desc">{selectedProduct.description}</p>
+
+                <dl className="details-meta-grid">
+                  <div className="meta-item">
+                    <dt>ID</dt>
+                    <dd>{selectedProduct.id}</dd>
+                  </div>
+                  <div className="meta-item">
+                    <dt>Категория</dt>
+                    <dd>{selectedProduct.category}</dd>
+                  </div>
+                  <div className="meta-item">
+                    <dt>Доступ</dt>
+                    <dd>{canManageProducts ? "Редактирование доступно" : "Только просмотр"}</dd>
+                  </div>
+                </dl>
+
+                <div className="details-actions" style={{ marginTop: 16 }}>
+                  {canManageProducts ? (
+                    <button className="btn btn-primary" onClick={startEditingProduct} type="button">
+                      Редактировать
+                    </button>
+                  ) : null}
+                  {canDeleteProducts ? (
+                    <button className="btn btn-danger" onClick={handleDeleteProduct} type="button">
+                      Удалить
+                    </button>
+                  ) : null}
+                </div>
+              </>
+            ) : (
+              <div className="empty-state">
+                <div className="empty-icon">□</div>
+                <p>Выберите товар слева, чтобы открыть подробную карточку.</p>
+              </div>
+            )}
+          </section>
+
+          <section className="panel">
+            <div className="panel-header">
+              <h2>{productFormMode === "edit" ? "Редактирование товара" : "Создание товара"}</h2>
+              <span className="section-label">
+                {canManageProducts ? "seller/admin" : "read-only"}
+              </span>
+            </div>
+
+            {canManageProducts ? (
+              <form className="form-grid" onSubmit={handleProductSubmit}>
+                <div className="field">
+                  <label>Название товара</label>
+                  <input
+                    value={productForm.title}
+                    onChange={(event) =>
+                      setProductForm((prev) => ({ ...prev, title: event.target.value }))
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="field">
+                  <label>Категория</label>
+                  <input
+                    value={productForm.category}
+                    onChange={(event) =>
+                      setProductForm((prev) => ({ ...prev, category: event.target.value }))
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="field full-width">
+                  <label>Описание</label>
+                  <textarea
+                    rows={4}
+                    value={productForm.description}
+                    onChange={(event) =>
+                      setProductForm((prev) => ({ ...prev, description: event.target.value }))
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="field">
+                  <label>Цена</label>
+                  <input
+                    inputMode="numeric"
+                    value={productForm.price}
+                    onChange={(event) =>
+                      setProductForm((prev) => ({ ...prev, price: event.target.value }))
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="form-actions full-width">
+                  <button className="btn btn-primary" disabled={isBusy} type="submit">
+                    {productFormMode === "edit" ? "Сохранить товар" : "Создать товар"}
+                  </button>
+                  {productFormMode === "edit" ? (
+                    <button className="btn btn-ghost" onClick={resetProductForm} type="button">
+                      Отмена
+                    </button>
+                  ) : null}
+                </div>
+              </form>
+            ) : (
+              <div className="empty-state">
+                <div className="empty-icon">i</div>
+                <p>Роль `user` может только просматривать товары. Для редактирования нужна роль `seller` или `admin`.</p>
+              </div>
+            )}
+          </section>
+
+          {isAdmin ? (
+            <section className="panel">
+              <div className="panel-header">
+                <h2>Управление пользователями</h2>
+                <span className="section-label">admin only</span>
+              </div>
+
+              <div className="admin-row">
+                <div>
+                  <p className="section-label">Список пользователей</p>
+                  {users.length === 0 ? (
+                    <div className="empty-state">
+                      <div className="empty-icon">□</div>
+                      <p>Пользователи не найдены.</p>
+                    </div>
+                  ) : (
+                    <div className="users-list">
+                      {users.map((user) => (
+                        <button
+                          key={user.id}
+                          className={`user-card ${selectedUser?.id === user.id ? "selected" : ""}`}
+                          onClick={() => handleSelectUser(user.id)}
+                          type="button"
+                        >
+                          <span>
+                            <span className="user-name">
+                              {user.first_name} {user.last_name}
+                            </span>
+                            <span className="user-role">
+                              {user.email} • {roleLabels[user.role]}
+                            </span>
+                          </span>
+                          <span className={`status-badge ${user.isBlocked ? "blocked" : "active"}`}>
+                            {user.isBlocked ? "blocked" : "active"}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <p className="section-label">Редактирование пользователя</p>
+
+                  {selectedUser ? (
+                    <form className="form-grid" onSubmit={handleUserSubmit}>
+                      <div className="field">
+                        <label>Email</label>
+                        <input
+                          type="email"
+                          value={userForm.email}
+                          onChange={(event) =>
+                            setUserForm((prev) => ({ ...prev, email: event.target.value }))
+                          }
+                          required
+                        />
+                      </div>
+
+                      <div className="field">
+                        <label>Роль</label>
+                        <select
+                          value={userForm.role}
+                          onChange={(event) =>
+                            setUserForm((prev) => ({ ...prev, role: event.target.value }))
+                          }
+                          disabled={isEditingSelf}
+                        >
+                          <option value="user">user</option>
+                          <option value="seller">seller</option>
+                          <option value="admin">admin</option>
+                        </select>
+                      </div>
+
+                      <div className="field">
+                        <label>Имя</label>
+                        <input
+                          value={userForm.first_name}
+                          onChange={(event) =>
+                            setUserForm((prev) => ({ ...prev, first_name: event.target.value }))
+                          }
+                          required
+                        />
+                      </div>
+
+                      <div className="field">
+                        <label>Фамилия</label>
+                        <input
+                          value={userForm.last_name}
+                          onChange={(event) =>
+                            setUserForm((prev) => ({ ...prev, last_name: event.target.value }))
+                          }
+                          required
+                        />
+                      </div>
+
+                      <div className="full-width">
+                        <label className="checkbox-field">
+                          <input
+                            checked={userForm.isBlocked}
+                            disabled={isEditingSelf}
+                            onChange={(event) =>
+                              setUserForm((prev) => ({ ...prev, isBlocked: event.target.checked }))
+                            }
+                            type="checkbox"
+                          />
+                          Заблокирован
+                        </label>
+                      </div>
+
+                      <div className="form-actions full-width">
+                        <button className="btn btn-primary" disabled={isBusy} type="submit">
+                          Сохранить пользователя
+                        </button>
+                        <button
+                          className="btn btn-danger"
+                          disabled={isBusy || isEditingSelf}
+                          onClick={handleBlockUser}
+                          type="button"
+                        >
+                          Заблокировать
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="empty-state">
+                      <div className="empty-icon">□</div>
+                      <p>Выберите пользователя слева, чтобы открыть форму редактирования.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          ) : null}
+        </main>
+      </div>
+
+      <footer className="footer">
+        Практики 11-12: `user` читает, `seller` редактирует, `admin` управляет товарами и пользователями.
+      </footer>
+    </>
   );
 }

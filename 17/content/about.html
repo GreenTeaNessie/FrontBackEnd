@@ -1,0 +1,9 @@
+<div class="about-content">
+  <h2>О приложении</h2>
+  <p class="lead">Версия 1.2.0 добавляет напоминания, планирование push-событий на сервере и действие уведомления.</p>
+  <ul class="about-list">
+    <li><strong>Напоминания:</strong> клиент отправляет событие <code>newReminder</code> с текстом и временем.</li>
+    <li><strong>Сервер:</strong> хранит активные таймеры в <code>Map</code> и отправляет Push по расписанию.</li>
+    <li><strong>Snooze:</strong> Service Worker обрабатывает кнопку "Отложить на 5 минут" через <code>POST /snooze</code>.</li>
+  </ul>
+</div>

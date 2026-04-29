@@ -1,7 +1,7 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
-export default function PropertyModal({ open, mode, initialProperty, onClose, onSubmit }) {
-  const [name, setName] = useState("");
+export default function PropertyModal({ open, mode, initialProduct, onClose, onSubmit }) {
+  const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
@@ -10,28 +10,28 @@ export default function PropertyModal({ open, mode, initialProperty, onClose, on
   useEffect(() => {
     if (!open) return;
 
-    setName(initialProperty?.name ?? "");
-    setCategory(initialProperty?.category ?? "");
-    setDescription(initialProperty?.description ?? "");
-    setPrice(initialProperty?.price != null ? String(initialProperty.price) : "");
-    setStock(initialProperty?.stock != null ? String(initialProperty.stock) : "1");
-  }, [open, initialProperty]);
+    setTitle(initialProduct?.title ?? "");
+    setCategory(initialProduct?.category ?? "");
+    setDescription(initialProduct?.description ?? "");
+    setPrice(initialProduct?.price != null ? String(initialProduct.price) : "");
+    setStock(initialProduct?.stock != null ? String(initialProduct.stock) : "1");
+  }, [open, initialProduct]);
 
   if (!open) return null;
 
-  const title = mode === "edit" ? "Редактирование объекта" : "Создание объекта";
+  const modalTitle = mode === "edit" ? "Редактирование товара" : "Создание товара";
 
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    const trimmedName = name.trim();
+    const trimmedTitle = title.trim();
     const trimmedCategory = category.trim();
     const trimmedDescription = description.trim();
     const parsedPrice = Number(price);
     const parsedStock = Number(stock);
 
-    if (!trimmedName || !trimmedCategory || !trimmedDescription) {
-      alert("Заполните название, категорию и описание");
+    if (!trimmedTitle || !trimmedCategory || !trimmedDescription) {
+      alert("Заполните название товара, категорию и описание");
       return;
     }
 
@@ -46,8 +46,8 @@ export default function PropertyModal({ open, mode, initialProperty, onClose, on
     }
 
     onSubmit({
-      id: initialProperty?.id,
-      name: trimmedName,
+      id: initialProduct?.id,
+      title: trimmedTitle,
       category: trimmedCategory,
       description: trimmedDescription,
       price: parsedPrice,
@@ -59,7 +59,7 @@ export default function PropertyModal({ open, mode, initialProperty, onClose, on
     <div className="backdrop" onMouseDown={onClose}>
       <div className="modal" onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
         <div className="modal__header">
-          <div className="modal__title">{title}</div>
+          <div className="modal__title">{modalTitle}</div>
           <button className="iconBtn" onClick={onClose} aria-label="Закрыть">
             x
           </button>
@@ -67,8 +67,8 @@ export default function PropertyModal({ open, mode, initialProperty, onClose, on
 
         <form className="form" onSubmit={handleSubmit}>
           <label className="label">
-            Название
-            <input className="input" value={name} onChange={(event) => setName(event.target.value)} autoFocus />
+            Название товара
+            <input className="input" value={title} onChange={(event) => setTitle(event.target.value)} autoFocus />
           </label>
 
           <label className="label">

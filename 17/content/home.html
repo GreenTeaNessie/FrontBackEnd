@@ -1,0 +1,25 @@
+<div class="home-content">
+  <h2>Главная</h2>
+  <p class="lead">Обычные заметки рассылаются через WebSocket. Напоминания сохраняются локально и планируются на сервере через Push.</p>
+
+  <form id="note-form" class="note-form">
+    <label class="sr-only" for="note-input">Текст заметки</label>
+    <input id="note-input" type="text" placeholder="Новая заметка" autocomplete="off" required>
+    <button type="submit">Добавить</button>
+  </form>
+
+  <form id="reminder-form" class="reminder-form">
+    <label class="sr-only" for="reminder-text">Текст напоминания</label>
+    <input id="reminder-text" type="text" placeholder="Текст напоминания" autocomplete="off" required>
+    <label class="sr-only" for="reminder-time">Время напоминания</label>
+    <input id="reminder-time" type="datetime-local" required>
+    <button type="submit">Напомнить</button>
+  </form>
+
+  <div class="list-header">
+    <h2>Список заметок</h2>
+    <button id="clear-notes" class="secondary" type="button">Очистить</button>
+  </div>
+  <ul id="notes-list" class="notes-list"></ul>
+  <p id="empty-state" class="empty-state">Пока нет заметок.</p>
+</div>

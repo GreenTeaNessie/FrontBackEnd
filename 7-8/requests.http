@@ -1,3 +1,8 @@
+### Проверка сервиса
+GET http://localhost:3000/api/health
+
+###
+
 ### Регистрация пользователя
 POST http://localhost:3000/api/auth/register
 Content-Type: application/json
@@ -11,7 +16,7 @@ Content-Type: application/json
 
 ###
 
-### Вход в систему (получить JWT)
+### Вход и получение access token
 POST http://localhost:3000/api/auth/login
 Content-Type: application/json
 
@@ -22,68 +27,55 @@ Content-Type: application/json
 
 ###
 
-### Вход с неверным паролем
-POST http://localhost:3000/api/auth/login
-Content-Type: application/json
-
-{
-  "email": "ivan@example.com",
-  "password": "wrongpassword"
-}
-
-###
-
-### Текущий пользователь (требуется JWT)
-# Вставьте accessToken из ответа /login
+### Текущий пользователь
 GET http://localhost:3000/api/auth/me
-Authorization: Bearer REPLACE_WITH_TOKEN
+Authorization: Bearer REPLACE_WITH_ACCESS_TOKEN
 
 ###
 
-### Создать товар (без авторизации)
-POST http://localhost:3000/api/products
-Content-Type: application/json
-
-{
-  "title": "Ноутбук Pro",
-  "category": "Электроника",
-  "description": "Мощный ноутбук для работы и учёбы",
-  "price": 89990
-}
-
-###
-
-### Получить список товаров (без авторизации)
+### Получить список товаров
 GET http://localhost:3000/api/products
 
 ###
 
-### Получить товар по id (требуется JWT)
-# Вставьте id из ответа POST /api/products
-GET http://localhost:3000/api/products/REPLACE_WITH_ID
-Authorization: Bearer REPLACE_WITH_TOKEN
+### Создать товар
+POST http://localhost:3000/api/products
+Content-Type: application/json
+
+{
+  "title": "Игровой ноутбук Storm 16",
+  "category": "Ноутбуки",
+  "description": "Модель с видеокартой RTX и экраном 165 Гц.",
+  "price": 119990
+}
+
+###
+
+### Получить товар по ID (требуется JWT)
+GET http://localhost:3000/api/products/REPLACE_WITH_PRODUCT_ID
+Authorization: Bearer REPLACE_WITH_ACCESS_TOKEN
 
 ###
 
 ### Обновить товар (требуется JWT)
-PUT http://localhost:3000/api/products/REPLACE_WITH_ID
+PUT http://localhost:3000/api/products/REPLACE_WITH_PRODUCT_ID
 Content-Type: application/json
-Authorization: Bearer REPLACE_WITH_TOKEN
+Authorization: Bearer REPLACE_WITH_ACCESS_TOKEN
 
 {
-  "title": "Ноутбук Pro Max",
-  "category": "Электроника",
-  "description": "Обновлённый ноутбук с улучшенными характеристиками",
-  "price": 99990
+  "title": "Игровой ноутбук Storm 16 Pro",
+  "category": "Ноутбуки",
+  "description": "Обновленная модель с 32 ГБ RAM и RTX.",
+  "price": 139990
 }
 
 ###
 
 ### Удалить товар (требуется JWT)
-DELETE http://localhost:3000/api/products/REPLACE_WITH_ID
-Authorization: Bearer REPLACE_WITH_TOKEN
+DELETE http://localhost:3000/api/products/REPLACE_WITH_PRODUCT_ID
+Authorization: Bearer REPLACE_WITH_ACCESS_TOKEN
 
 ###
 
-### Запрос без авторизации (должен вернуть 401)
-GET http://localhost:3000/api/products/REPLACE_WITH_ID
+### Проверка защиты: запрос без токена должен вернуть 401
+GET http://localhost:3000/api/products/REPLACE_WITH_PRODUCT_ID
