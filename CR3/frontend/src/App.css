@@ -99,12 +99,15 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #cbd5e1;
   flex: 0 0 auto;
 }
 
-.notification-dot.online {
+.notification-dot.enabled {
   background: var(--success);
+}
+
+.notification-dot.disabled {
+  background: var(--danger);
 }
 
 .notification-copy {

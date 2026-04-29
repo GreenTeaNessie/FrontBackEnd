@@ -227,6 +227,11 @@ function scheduleReminder(reminder) {
 
   reminder.status = "scheduled";
   reminder.timeoutId = setTimeout(() => {
+    if (Date.now() < Number(reminder.reminderTime)) {
+      scheduleReminder(reminder);
+      return;
+    }
+
     reminder.status = "due";
     reminder.timeoutId = null;
     reminders.set(reminder.id, reminder);
@@ -630,7 +635,6 @@ app.post("/api/reminders", authMiddleware, (req, res) => {
   };
 
   scheduleReminder(reminder);
-  io.emit("reminderScheduled", serializeReminder(reminder));
 
   return res.status(201).json(serializeReminder(reminder));
 });

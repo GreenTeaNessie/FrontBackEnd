@@ -116,7 +116,6 @@ export default function App() {
   const canEdit = currentUser && ["seller", "admin"].includes(currentUser.role);
   const isAdmin = currentUser?.role === "admin";
   const isPushEnabled = pushStatus === "Push включён";
-  const isSocketOnline = socketStatus.startsWith("Socket.IO подключён");
 
   useEffect(() => {
     api.getConfig()
@@ -168,12 +167,6 @@ export default function App() {
         socket.on("propertyDeleted", (property) => {
           setInfoMessage(`Объявление удалено: ${property.title}`);
           loadData(currentUser);
-        });
-        socket.on("reminderScheduled", (reminder) => {
-          if (reminder.userId === currentUser.id || currentUser.role === "admin") {
-            setInfoMessage(`Напоминание запланировано: ${reminder.propertyTitle}`);
-            api.getReminders().then(setReminders).catch(() => {});
-          }
         });
         socket.on("reminderSnoozed", (reminder) => {
           if (reminder.userId === currentUser.id || currentUser.role === "admin") {
@@ -438,7 +431,7 @@ export default function App() {
       });
       setReminders((current) => [...current, reminder].sort((a, b) => a.reminderTime - b.reminderTime));
       setReminderForm(emptyReminderForm);
-      setInfoMessage("Напоминание создано.");
+      setInfoMessage(`Напоминание запланировано на ${formatDateTime(reminder.reminderTime)}.`);
     } catch (e) {
       setErrorMessage(mapError(e, "Не удалось создать напоминание."));
     } finally { setIsBusy(false); }
@@ -482,7 +475,7 @@ export default function App() {
         {currentUser && (
           <>
             <div className="notification-control" title={`${socketStatus}. ${pushStatus}`}>
-              <span className={`notification-dot ${isSocketOnline ? "online" : ""}`} aria-hidden="true" />
+              <span className={`notification-dot ${isPushEnabled ? "enabled" : "disabled"}`} aria-hidden="true" />
               <span className="notification-copy">
                 <strong>Уведомления</strong>
                 <span>{isPushEnabled ? "включены" : "выключены"}</span>
