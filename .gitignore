@@ -3,4 +3,4 @@ node_modules/
 *.pdf
 CR3/*.pdf
 *.txt
-.tmp/
+tmp/
