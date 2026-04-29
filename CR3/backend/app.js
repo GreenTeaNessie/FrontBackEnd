@@ -172,17 +172,28 @@ function emitPropertyEvent(type, property) {
   io.emit(type, enriched);
 
   const titles = {
-    propertyCreated: "Новое объявление",
-    propertyUpdated: "Объявление обновлено",
-    propertyDeleted: "Объявление удалено"
+    propertyCreated: "EstateHub: новое объявление",
+    propertyUpdated: "EstateHub: объявление обновлено",
+    propertyDeleted: "EstateHub: объявление удалено"
+  };
+  const verbs = {
+    propertyCreated: "Добавлено",
+    propertyUpdated: "Обновлено",
+    propertyDeleted: "Удалено"
   };
 
   broadcastPush({
     title: titles[type] || "EstateHub",
-    body: enriched.title,
+    body: `${verbs[type] || "Событие"}: ${enriched.title} · ${formatPriceForPush(enriched.price)}`,
     propertyId: enriched.id,
-    eventType: type
+    eventType: type,
+    notificationType: "property",
+    timestamp: Date.now()
   });
+}
+
+function formatPriceForPush(value) {
+  return `${new Intl.NumberFormat("ru-RU").format(value)} ₽`;
 }
 
 function serializeReminder(reminder) {
@@ -221,11 +232,13 @@ function scheduleReminder(reminder) {
     reminders.set(reminder.id, reminder);
 
     const payload = {
-      title: "Напоминание о недвижимости",
-      body: reminder.text,
+      title: "EstateHub: напоминание",
+      body: `${reminder.propertyTitle} · ${reminder.text}`,
       reminderId: reminder.id,
       propertyId: reminder.propertyId,
-      propertyTitle: reminder.propertyTitle
+      propertyTitle: reminder.propertyTitle,
+      notificationType: "reminder",
+      timestamp: Date.now()
     };
 
     broadcastPush(payload, (record) => record.userId === reminder.userId);

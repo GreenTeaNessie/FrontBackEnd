@@ -115,6 +115,8 @@ export default function App() {
 
   const canEdit = currentUser && ["seller", "admin"].includes(currentUser.role);
   const isAdmin = currentUser?.role === "admin";
+  const isPushEnabled = pushStatus === "Push включён";
+  const isSocketOnline = socketStatus.startsWith("Socket.IO подключён");
 
   useEffect(() => {
     api.getConfig()
@@ -479,12 +481,21 @@ export default function App() {
         {isBusy && <span className="navbar-status">Загрузка…</span>}
         {currentUser && (
           <>
-            <div className="pwa-status">
-              <span>{socketStatus}</span>
-              <span>{pushStatus}</span>
+            <div className="notification-control" title={`${socketStatus}. ${pushStatus}`}>
+              <span className={`notification-dot ${isSocketOnline ? "online" : ""}`} aria-hidden="true" />
+              <span className="notification-copy">
+                <strong>Уведомления</strong>
+                <span>{isPushEnabled ? "включены" : "выключены"}</span>
+              </span>
+              <button
+                className={`notification-toggle ${isPushEnabled ? "enabled" : ""}`}
+                type="button"
+                onClick={isPushEnabled ? handleDisablePush : handleEnablePush}
+                disabled={isBusy}
+              >
+                {isPushEnabled ? "Откл." : "Вкл."}
+              </button>
             </div>
-            <button className="btn btn-ghost btn-sm" type="button" onClick={handleEnablePush}>Push on</button>
-            <button className="btn btn-ghost btn-sm" type="button" onClick={handleDisablePush}>Push off</button>
             <div className="user-pill">
               {currentUser.username}
               <span className="role-tag">{roleLabels[currentUser.role]}</span>

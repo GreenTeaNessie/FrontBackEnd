@@ -83,19 +83,68 @@
   font-weight: 700;
 }
 
-.pwa-status {
-  display: grid;
-  gap: 2px;
-  color: var(--muted);
-  font-size: 0.74rem;
-  line-height: 1.2;
+.notification-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 4px 6px 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
 }
 
-.pwa-status span {
-  max-width: 210px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.notification-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  flex: 0 0 auto;
+}
+
+.notification-dot.online {
+  background: var(--success);
+}
+
+.notification-copy {
+  display: grid;
+  gap: 1px;
+  line-height: 1.05;
+}
+
+.notification-copy strong {
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.notification-copy span {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.notification-toggle {
+  min-width: 48px;
+  min-height: 26px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.notification-toggle.enabled {
+  background: var(--primary);
+  color: white;
+}
+
+.notification-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 /* ─── Alerts ─────────────────────────────────────────────────── */

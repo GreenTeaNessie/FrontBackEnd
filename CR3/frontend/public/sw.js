@@ -52,23 +52,38 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let data = { title: "EstateHub", body: "Новое событие", reminderId: null };
+  let data = {
+    title: "EstateHub",
+    body: "Новое событие",
+    reminderId: null,
+    notificationType: "property",
+    timestamp: Date.now()
+  };
   if (event.data) data = event.data.json();
+
+  const isReminder = data.notificationType === "reminder" || Boolean(data.reminderId);
 
   const options = {
     body: data.body,
     icon: "/icons/icon-192.png",
     badge: "/icons/favicon-48x48.png",
+    image: "/icons/icon-512.png",
+    tag: isReminder ? `reminder-${data.reminderId}` : `property-${data.propertyId || "event"}`,
+    renotify: true,
+    requireInteraction: isReminder,
+    timestamp: data.timestamp || Date.now(),
     data: {
       reminderId: data.reminderId || null,
-      propertyId: data.propertyId || null
-    }
+      propertyId: data.propertyId || null,
+      url: "/"
+    },
+    actions: [
+      { action: "open", title: "Открыть EstateHub" }
+    ]
   };
 
-  if (data.reminderId) {
-    options.actions = [
-      { action: "snooze", title: "Отложить на 5 минут" }
-    ];
+  if (isReminder) {
+    options.actions.unshift({ action: "snooze", title: "Отложить на 5 минут" });
   }
 
   event.waitUntil(self.registration.showNotification(data.title, options));
@@ -86,5 +101,5 @@ self.addEventListener("notificationclick", (event) => {
   }
 
   event.notification.close();
-  event.waitUntil(clients.openWindow("/"));
+  event.waitUntil(clients.openWindow(event.notification.data?.url || "/"));
 });
